@@ -1,6 +1,5 @@
 "use client";
 import { useRef, useMemo } from "react";
-import type React from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { generateHeartPoints, generateRandomPoints, lerpPositions } from "@/lib/heartGeometry";
@@ -15,11 +14,11 @@ const AWAKE_PHASES: Phase[] = ["awakening", "origin"];
 
 interface Props {
   phase: Phase;
-  mouseRef: React.RefObject<{ x: number; y: number }>;
+  mouseRef: { current: { x: number; y: number } };
 }
 
 export default function ParticleSystem({ phase, mouseRef }: Props) {
-  const meshRef = useRef<THREE.Points>(null);
+  const meshRef = useRef<THREE.Points<THREE.BufferGeometry, THREE.Material>>(null);
   const progressRef = useRef(0);
   const timeRef = useRef(0);
 
@@ -75,7 +74,7 @@ export default function ParticleSystem({ phase, mouseRef }: Props) {
     return v;
   }, []);
 
-  useFrame((_, delta) => {
+  useFrame((_state: unknown, delta: number) => {
     if (!meshRef.current) return;
     timeRef.current += delta;
     const t = timeRef.current;

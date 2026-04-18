@@ -181,3 +181,12 @@ interface GlobalJSXIntrinsicElements {
   // Catch-all
   [elemName: string]: unknown;
 }
+
+// Extend JSX with @react-three/fiber Three.js elements
+declare module "react" {
+  namespace JSX {
+    interface IntrinsicElements {
+      [elemName: string]: unknown;
+    }
+  }
+}
