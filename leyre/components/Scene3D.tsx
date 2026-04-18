@@ -1,5 +1,6 @@
 "use client";
 import { useRef, Suspense } from "react";
+import React from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Bloom, EffectComposer, Vignette } from "@react-three/postprocessing";
 import * as THREE from "three";
@@ -68,10 +69,11 @@ interface Props {
 }
 
 export default function Scene3D({ phase }: Props) {
-  const mouseRef = useRef({ x: 0, y: 0 });
+  const mouseRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 }) as React.RefObject<{ x: number; y: number }>;
 
   const handleMouseMove = (e: { clientX: number; clientY: number }) => {
-    mouseRef.current = {
+    const mref = mouseRef as { current: { x: number; y: number } };
+    mref.current = {
       x: (e.clientX / window.innerWidth) * 2 - 1,
       y: -(e.clientY / window.innerHeight) * 2 + 1,
     };
