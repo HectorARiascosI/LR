@@ -148,9 +148,8 @@ const SECTIONS = [
     </p></FadeIn>
   </div>,
 
-  // 4 — ella fuerte (fotos: músculo + rizado)
+  // 4 — ella fuerte (fotos: rizado + músculo)
   <div key="4" className="text-block" style={{ maxWidth:700 }}>
-    <FadeIn><p className="t-caption c-gold" style={{ marginBottom:"1rem" }}>fuerte y suave al mismo tiempo</p></FadeIn>
     <FadeIn delay={0.15}>
       <div style={{ display:"flex", gap:"1rem", justifyContent:"center", flexWrap:"wrap" }}>
         <PhotoCard src="/photos/leyre-rizado.jpg" alt="Leyre pelo rizado" caption="Tu pelo rizado suelto es una de mis cosas favoritas." glowColor="#ffb8d4" size="lg" delay={0.1} />
@@ -233,7 +232,6 @@ const SECTIONS = [
 
   // 8 — las manos (foto de la carpa)
   <div key="8" className="text-block" style={{ maxWidth:560 }}>
-    <FadeIn><p className="t-caption c-gold" style={{ marginBottom:"1rem" }}>el momento que más me gusta</p></FadeIn>
     <FadeIn delay={0.25}>
       <PhotoCard src="/photos/manos.jpg" alt="Nuestras manos" caption="Dentro de una carpa. El campo verde afuera. Nuestras manos así. Perfecto." glowColor="#f5d98a" size="full" delay={0} />
     </FadeIn>
@@ -247,7 +245,6 @@ const SECTIONS = [
 
   // 9 — Barak
   <div key="9" className="text-block" style={{ maxWidth:560 }}>
-    <FadeIn><p className="t-caption c-sakura" style={{ marginBottom:"1rem" }}>y él también cuenta</p></FadeIn>
     <FadeIn delay={0.2}><h2 className="t-title c-white" style={{ marginBottom:"1.2rem" }}>Barak.</h2></FadeIn>
     <FadeIn delay={0.35}>
       <PhotoCard src="/photos/barak.jpg" alt="Barak el pekinés" caption="Dos meses. Dormidito. Como si el mundo no existiera." glowColor="#f5d98a" size="full" delay={0} />
@@ -260,9 +257,8 @@ const SECTIONS = [
     </p></FadeIn>
   </div>,
 
-  // 10 — fe
+  // 10 — fe y destino (sin título frío)
   <div key="10" className="text-block">
-    <FadeIn><p className="t-caption c-gold" style={{ marginBottom:"1rem" }}>fe</p></FadeIn>
     <FadeIn delay={0.2}><h2 className="t-title c-gold glow-gold" style={{ marginBottom:"1.2rem" }}>Dios sabe lo que hace.</h2></FadeIn>
     <FadeIn delay={0.45}><p className="t-body">
       No creo en las casualidades.<br />
@@ -285,9 +281,8 @@ const SECTIONS = [
     </p></FadeIn>
   </div>,
 
-  // 11 — el futuro
+  // 11 — el futuro (sin título frío)
   <div key="11" className="text-block">
-    <FadeIn><p className="t-caption c-white" style={{ marginBottom:"1rem" }}>el futuro</p></FadeIn>
     <FadeIn delay={0.2}><h2 className="t-title c-white glow-white" style={{ marginBottom:"1.2rem" }}>
       Eres la mujer con la que<br />
       quiero tener mis hijos algún día.

@@ -6,7 +6,7 @@ import * as THREE from "three";
 import { Vector2 } from "three";
 import KoreanSkyShader from "./KoreanSkyShader";
 import SakuraPetals from "./SakuraPetals";
-import ParticleMorph from "./ParticleMorph";
+import NeonHeart from "./NeonHeart";
 
 interface SceneCanvasProps {
   scrollProgress: React.RefObject<number>;
@@ -33,9 +33,7 @@ export default function SceneCanvas({ scrollProgress, section }: SceneCanvasProp
 
       {/* Pétalos de sakura cayendo */}
       <SakuraPetals />
-
-      {/* Partículas morphing — siempre activas */}
-      <ParticleMorph scrollProgress={scrollProgress} />
+      <NeonHeart />
 
       <EffectComposer multisampling={0}>
         <Bloom

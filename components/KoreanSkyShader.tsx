@@ -120,8 +120,9 @@ void main(){
   vec3 col = mix(bot, top, skyT);
 
   // ── Sol ──────────────────────────────────────────────────────────────────
-  float sunX = 0.5 + sin(sec * 0.28) * 0.3;
-  float sunY = 0.55 + cos(sec * 0.18) * 0.22;
+  // Sol fijo — no se mueve al cambiar sección
+  float sunX = 0.72;
+  float sunY = 0.62;
   vec2 sunPos = vec2(sunX, sunY);
   float sunDist = length(uv - sunPos);
   float sunGlow = exp(-sunDist * 8.0) * 0.9;
@@ -225,7 +226,7 @@ export default function KoreanSkyShader({ section }: Props) {
     mat.uniforms.uTime.value = clock.elapsedTime;
     // Suavizar transición de sección
     targetSection.current = section;
-    mat.uniforms.uSection.value += (targetSection.current - mat.uniforms.uSection.value) * 0.025;
+    mat.uniforms.uSection.value += (targetSection.current - mat.uniforms.uSection.value) * 0.008;
   });
 
   return (
