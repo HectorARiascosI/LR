@@ -11,101 +11,25 @@
 import { useRef, useMemo, useEffect, Suspense } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
-  useGLTF,
-  useAnimations,
   MeshReflectorMaterial,
-  Environment,
   Stars as DreiStars,
 } from "@react-three/drei";
 import { Bloom, EffectComposer, Vignette } from "@react-three/postprocessing";
 import * as THREE from "three";
+import { Escanor, Merlin } from "./AnimeCharacters";
+import type { EscanorAnim, MerlinAnim } from "./AnimeCharacters";
 
-// ─── ROBOT ANIMADO ────────────────────────────────────────────────────────────
-const ANIM_BY_SECTION: Record<number, string> = {
-  0: "Idle",
-  1: "Wave",
-  2: "Idle",
-  3: "Walking",
-  4: "Dance",
-  5: "ThumbsUp",
-  6: "Standing",
-  7: "Idle",
-  8: "Yes",
-  9: "Wave",
+// ─── ANIMACIONES POR SECCIÓN ─────────────────────────────────────────────────
+const ESCANOR_ANIM: Record<number, EscanorAnim> = {
+  0: "idle", 1: "idle", 2: "idle",
+  3: "walk", 4: "proud", 5: "raise_arm",
+  6: "raise_arm", 7: "idle", 8: "bow", 9: "bow",
 };
-
-interface RobotProps {
-  section: number;
-  position?: [number, number, number];
-  scale?: number;
-}
-
-function Robot({ section, position = [0, 0, 0], scale = 1 }: RobotProps) {
-  const group = useRef<THREE.Group>(null);
-  const { scene, animations } = useGLTF("/models/robot.glb");
-  const { actions, mixer } = useAnimations(animations, group);
-  const prevAnim = useRef<string>("");
-
-  // Clonar escena para poder tener múltiples instancias
-  const clonedScene = useMemo(() => scene.clone(true), [scene]);
-
-  // Aplicar cel-shading toon a todos los materiales
-  useEffect(() => {
-    clonedScene.traverse((child: THREE.Object3D) => {
-      if ((child as THREE.Mesh).isMesh) {
-        const mesh = child as THREE.Mesh;
-        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-        mats.forEach((mat, i) => {
-          const toon = new THREE.MeshToonMaterial({
-            color: (mat as THREE.MeshStandardMaterial).color ?? new THREE.Color("#888"),
-            emissive: new THREE.Color("#1a0a2e"),
-            emissiveIntensity: 0.05,
-          });
-          if (Array.isArray(mesh.material)) mesh.material[i] = toon;
-          else mesh.material = toon;
-        });
-      }
-    });
-  }, [clonedScene]);
-
-  useEffect(() => {
-    const animName = ANIM_BY_SECTION[section] ?? "Idle";
-    if (animName === prevAnim.current) return;
-
-    const prev = actions[prevAnim.current];
-    const next = actions[animName];
-    if (!next) return;
-
-    if (prev) {
-      prev.fadeOut(0.4);
-    }
-    next.reset().fadeIn(0.4).play();
-    prevAnim.current = animName;
-  }, [section, actions]);
-
-  // Iniciar animación idle al montar
-  useEffect(() => {
-    const idle = actions["Idle"];
-    if (idle) {
-      idle.play();
-      prevAnim.current = "Idle";
-    }
-  }, [actions]);
-
-  useFrame((_, delta) => {
-    mixer.update(delta);
-    // Leve balanceo de cabeza
-    if (group.current) {
-      group.current.rotation.y = Math.sin(Date.now() * 0.0003) * 0.15;
-    }
-  });
-
-  return (
-    <group ref={group} position={position} scale={[scale, scale, scale]}>
-      <primitive object={clonedScene} />
-    </group>
-  );
-}
+const MERLIN_ANIM: Record<number, MerlinAnim> = {
+  0: "idle", 1: "look_up", 2: "idle",
+  3: "idle", 4: "cast_spell", 5: "cast_spell",
+  6: "wave", 7: "summon", 8: "idle", 9: "wave",
+};
 
 // ─── SUELO REFLECTANTE ────────────────────────────────────────────────────────
 function Ground() {
@@ -434,10 +358,9 @@ function Scene({ scrollRef, section }: SceneProps) {
       <SakuraPetals />
       <MagicParticles active={section >= 4} />
 
-      {/* Personaje */}
-      <Suspense fallback={null}>
-        <Robot section={section} position={[0, 0, 0]} scale={1.0} />
-      </Suspense>
+      {/* Personajes — Escanor y Merlin */}
+      <Escanor position={[1.5, 0, 0]}  anim={ESCANOR_ANIM[section] ?? "idle"} scale={1.1} />
+      <Merlin  position={[-1.5, 0, 0]} anim={MERLIN_ANIM[section]  ?? "idle"} scale={1.0} />
 
       {/* Luz de relleno para el personaje */}
       <pointLight position={[0, 3, 2]} intensity={0.6} color="#ffffff" distance={6} />
@@ -484,5 +407,4 @@ export default function World3D({ scrollRef, section }: World3DProps) {
   );
 }
 
-// Preload
-useGLTF.preload("/models/robot.glb");
+// Preload eliminado — personajes procedurales no necesitan preload
