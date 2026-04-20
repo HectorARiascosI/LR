@@ -194,15 +194,15 @@ export default function Home() {
       {/* Hojas con texto */}
       <LeafTextParticles phase={phase} />
 
-      {/* Texto narrativo */}
+      {/* Texto narrativo — sin blur CSS (caro en compositor) */}
       <div className="relative z-20">
         <AnimatePresence mode="wait">
           <motion.div
             key={phase}
-            initial={{ opacity: 0, filter: "blur(8px)" }}
-            animate={{ opacity: 1, filter: "blur(0px)" }}
-            exit={{ opacity: 0, filter: "blur(4px)" }}
-            transition={{ duration: 1.0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.9 }}
           >
             <NarrativeText phase={phase} />
           </motion.div>
