@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { motion, useInView } from "framer-motion";
+import { useKoreanMusic } from "@/hooks/useKoreanMusic";
 
 const SceneCanvas = dynamic(() => import("@/components/SceneCanvas"), {
   ssr: false,
@@ -32,78 +33,6 @@ function useTimeSince() {
   }, []);
 
   return elapsed;
-}
-
-// ─── MÚSICA ───────────────────────────────────────────────────────────────────
-function usePianoMusic() {
-  const ctxRef     = useRef<AudioContext | null>(null);
-  const masterRef  = useRef<GainNode | null>(null);
-  const playingRef = useRef(false);
-  const rafRef     = useRef<number>(0);
-  const nextNoteAt = useRef(0);
-  const noteIdx    = useRef(0);
-
-  const MELODY  = [261.63, 293.66, 311.13, 349.23, 392.00, 415.30, 466.16, 523.25];
-  const PATTERN = [0, 2, 3, 5, 4, 2, 0, 3, 2, 5, 3, 0, 2, 4, 3, 1];
-
-  const playNote = useCallback((freq: number, when: number, dur: number, vol = 0.1) => {
-    const ctx = ctxRef.current;
-    if (!ctx || !masterRef.current) return;
-    const osc  = ctx.createOscillator();
-    const gain = ctx.createGain();
-    const filt = ctx.createBiquadFilter();
-    filt.type = "lowpass"; filt.frequency.value = 900;
-    osc.type = "sine"; osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0, when);
-    gain.gain.linearRampToValueAtTime(vol, when + 0.015);
-    gain.gain.exponentialRampToValueAtTime(0.0001, when + dur);
-    osc.connect(filt); filt.connect(gain); gain.connect(masterRef.current);
-    osc.start(when); osc.stop(when + dur + 0.05);
-  }, []);
-
-  const schedule = useCallback(() => {
-    if (!ctxRef.current || !playingRef.current) return;
-    const ctx = ctxRef.current;
-    while (nextNoteAt.current < ctx.currentTime + 0.1) {
-      const idx = PATTERN[noteIdx.current % PATTERN.length];
-      playNote(MELODY[idx], nextNoteAt.current, 1.4, 0.09);
-      if (noteIdx.current % 4 === 0) playNote(MELODY[idx] * 0.25, nextNoteAt.current, 2.2, 0.07);
-      nextNoteAt.current += 0.42;
-      noteIdx.current++;
-    }
-    rafRef.current = requestAnimationFrame(schedule);
-  }, [MELODY, PATTERN, playNote]);
-
-  const start = useCallback(() => {
-    if (playingRef.current) return;
-    if (!ctxRef.current) {
-      ctxRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-      const master = ctxRef.current.createGain();
-      master.gain.value = 0.55;
-      master.connect(ctxRef.current.destination);
-      masterRef.current = master;
-    }
-    if (ctxRef.current.state === "suspended") ctxRef.current.resume();
-    playingRef.current = true;
-    nextNoteAt.current = ctxRef.current.currentTime + 0.1;
-    schedule();
-  }, [schedule]);
-
-  const stop = useCallback(() => {
-    playingRef.current = false;
-    cancelAnimationFrame(rafRef.current);
-    if (masterRef.current) {
-      masterRef.current.gain.linearRampToValueAtTime(0, (ctxRef.current?.currentTime ?? 0) + 0.5);
-      setTimeout(() => { if (masterRef.current) masterRef.current.gain.value = 0.55; }, 600);
-    }
-  }, []);
-
-  const toggle = useCallback(() => {
-    if (playingRef.current) { stop(); return false; }
-    else { start(); return true; }
-  }, [start, stop]);
-
-  return { toggle };
 }
 
 // ─── FADE IN ──────────────────────────────────────────────────────────────────
@@ -439,7 +368,7 @@ export default function Home() {
   const scrollRef = useRef<number>(0);
   const [section, setSection] = useState(0);
   const [musicOn, setMusicOn] = useState(false);
-  const { toggle } = usePianoMusic();
+  const { toggle } = useKoreanMusic();
 
   useEffect(() => {
     let lenis: { raf: (t: number) => void; destroy: () => void } | null = null;
@@ -465,11 +394,11 @@ export default function Home() {
 
   return (
     <>
-      {/* Canvas 3D — shader nebulosa + partículas morphing + ramo */}
+      {/* Canvas 3D — cielo coreano + sakura + ramo + partículas */}
       <div style={{ position: "fixed", inset: 0, zIndex: 0 }}>
         <SceneCanvas
           scrollProgress={scrollRef as React.RefObject<number>}
-          showBouquet={section === 0}
+          section={section}
         />
       </div>
 
