@@ -77,13 +77,18 @@ float mountain(vec2 uv, float scale, float offset, float t){
 }
 
 // ── Rayos de sol ──────────────────────────────────────────────────────────────
-float sunRay(vec2 uv, vec2 sunPos, float angle, float width){
+float sunRay(vec2 uv, vec2 sunPos, float angle, float width, float t){
   vec2 d = uv - sunPos;
   float a = atan(d.y, d.x);
   float diff = mod(abs(a - angle) + 3.14159, 6.28318) - 3.14159;
-  float ray = smoothstep(width, 0.0, abs(diff));
+  // Suavidad gaussiana — no barra sólida
+  float ray = exp(-diff * diff / (width * width * 2.0));
   float dist = length(d);
-  return ray * smoothstep(1.2, 0.0, dist) * smoothstep(0.0, 0.08, dist);
+  // Atenuación con distancia + ruido para aspecto volumétrico
+  float n = noise(vec2(dist * 8.0 + t * 0.3, angle * 3.0));
+  ray *= smoothstep(1.4, 0.0, dist) * smoothstep(0.0, 0.12, dist);
+  ray *= 0.5 + n * 0.5;
+  return ray * 0.7;
 }
 
 // ── Arcoíris ──────────────────────────────────────────────────────────────────
@@ -125,13 +130,15 @@ void main(){
   col += sunGlow * sunCol * 0.6;
   col += sunCore * vec3(1.0,0.98,0.92);
 
-  // ── Rayos de sol (volumétricos) ──────────────────────────────────────────
+  // ── Rayos de sol (volumétricos suaves) ──────────────────────────────────
   float rays = 0.0;
-  for(int i=0;i<8;i++){
-    float angle = float(i) * 0.785 + t * 0.015;
-    rays += sunRay(uv, sunPos, angle, 0.018);
+  for(int i=0;i<12;i++){
+    float fi = float(i);
+    float angle = fi * 0.5236 + t * 0.012 + sin(t * 0.08 + fi) * 0.15;
+    float width = 0.04 + sin(fi * 1.3) * 0.02;
+    rays += sunRay(uv, sunPos, angle, width, t);
   }
-  col += rays * sunCol * 0.22;
+  col += rays * sunCol * 0.18;
 
   // ── Arcoíris (secciones 2-4) ─────────────────────────────────────────────
   float rainbowAmt = smoothstep(1.5,2.5,sec) * smoothstep(4.5,3.5,sec);

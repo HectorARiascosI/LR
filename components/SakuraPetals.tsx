@@ -18,6 +18,7 @@ attribute float aRot;
 attribute float aSize;
 
 uniform float uTime;
+uniform float uWind;  // fuerza del viento
 
 varying float vAlpha;
 varying vec2  vUv;
@@ -26,16 +27,20 @@ void main(){
   vUv = uv;
   vec3 pos = position;
 
-  // Caída
+  // Caída con gravedad
   float t = mod(uTime * aSpeed + aPhase * 40.0, 40.0);
   pos.y -= t * 0.18;
-  // Balanceo lateral
-  pos.x += sin(uTime * aSwing + aPhase * 6.28) * 0.4;
-  pos.x += cos(uTime * aSwing * 0.7 + aPhase) * 0.2;
+
+  // Viento + balanceo natural
+  float wind = uWind * sin(uTime * 0.3 + aPhase * 2.0) * 0.6;
+  pos.x += sin(uTime * aSwing + aPhase * 6.28) * 0.35 + wind;
+  pos.x += cos(uTime * aSwing * 0.7 + aPhase) * 0.18;
+  // Turbulencia vertical suave
+  pos.y += sin(uTime * aSwing * 1.3 + aPhase * 4.0) * 0.04;
   // Profundidad variable
   pos.z += sin(aPhase * 3.14) * 1.5;
 
-  // Rotación del pétalo (billboard parcial)
+  // Rotación del pétalo
   float angle = uTime * aRot + aPhase * 6.28;
   mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
   pos.xy = rot * pos.xy * aSize;
@@ -43,7 +48,7 @@ void main(){
   vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
   gl_Position = projectionMatrix * mvPos;
 
-  vAlpha = 0.55 + sin(uTime * 0.8 + aPhase * 3.14) * 0.2;
+  vAlpha = 0.5 + sin(uTime * 0.7 + aPhase * 3.14) * 0.22;
 }
 `;
 
@@ -104,6 +109,7 @@ export default function SakuraPetals() {
     fragmentShader: FRAG,
     uniforms: {
       uTime:  { value: 0 },
+      uWind:  { value: 1.0 },
       uColor: { value: new THREE.Color("#ffb7c5") },
     },
     transparent: true,
@@ -128,6 +134,8 @@ export default function SakuraPetals() {
   useFrame(({ clock }) => {
     if (!meshRef.current) return;
     mat.uniforms.uTime.value = clock.elapsedTime;
+    // Viento oscilante natural
+    mat.uniforms.uWind.value = Math.sin(clock.elapsedTime * 0.22) * 0.8 + Math.sin(clock.elapsedTime * 0.07) * 0.4;
 
     for (let i = 0; i < COUNT; i++) {
       dummy.position.set(...initPositions[i]);

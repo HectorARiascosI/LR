@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { motion, useInView } from "framer-motion";
 import { useKoreanMusic } from "@/hooks/useKoreanMusic";
+import PhotoCard from "@/components/PhotoCard";
 
 const SceneCanvas = dynamic(() => import("@/components/SceneCanvas"), {
   ssr: false,
@@ -104,7 +105,7 @@ const SECTIONS = [
 
   // 2 — el primer mensaje
   <div key="2" className="text-block">
-    <FadeIn><p className="t-caption c-lilac" style={{ marginBottom: "0.8rem" }}>17 de marzo · 6:01 am</p></FadeIn>
+    <FadeIn><p className="t-caption c-lilac" style={{ marginBottom: "0.8rem" }}>17 de marzo · 6:01 am · Instagram</p></FadeIn>
     <FadeIn delay={0.15}><p className="t-title c-white" style={{ marginBottom: "1.4rem" }}>
       Mientras el mundo dormía,<br />
       <span className="c-lilac glow-lilac">Dios movió algo.</span>
@@ -112,18 +113,22 @@ const SECTIONS = [
     <FadeIn delay={0.4}>
       <div className="bubble-wrap">
         <div className="bubble bubble-sent">Holaap<div className="bubble-time">6:01 am</div></div>
-        <div className="bubble bubble-recv">Holaaaa 😊<div className="bubble-time">6:02 am</div></div>
-        <div className="bubble bubble-sent">¿Cómo estás?<div className="bubble-time">6:02 am</div></div>
-        <div className="bubble bubble-recv">Con sueño 😴<div className="bubble-time">6:03 am</div></div>
-        <div className="bubble bubble-sent">Jaja, ¿y aun así respondes?<div className="bubble-time">6:03 am</div></div>
-        <div className="bubble bubble-recv">Claro 😊<div className="bubble-time">6:04 am</div></div>
+        <div className="bubble bubble-recv">Holaaaa<div className="bubble-time">6:01 am</div></div>
+        <div className="bubble bubble-sent">Como estás?<div className="bubble-time">6:01 am</div></div>
+        <div className="bubble bubble-recv">Con sueño 😫<div className="bubble-time">6:01 am</div></div>
+        <div className="bubble bubble-recv">Jajaja muy bien y tú?<div className="bubble-time">6:01 am</div></div>
+        <div className="bubble bubble-sent">Jaja no debes madrugar?<div className="bubble-time">6:01 am</div></div>
+        <div className="bubble bubble-recv">Me despierto a las 5:50<br />pero aún así me da mucho sueño<div className="bubble-time">6:01 am</div></div>
+        <div className="bubble bubble-recv">Soy de pasto y tu?<div className="bubble-time">6:01 am</div></div>
+        <div className="bubble bubble-sent">También soy de Pasto :))<div className="bubble-time">6:01 am</div></div>
+        <div className="bubble bubble-recv">Yeeei<div className="bubble-time">6:01 am</div></div>
       </div>
     </FadeIn>
     <FadeIn delay={0.85}><p className="t-verse" style={{ marginTop: "1.4rem" }}>
-      Con sueño a las 6 de la mañana.<br />
-      Ojos medio cerrados, teléfono en mano.<br />
+      Con sueño a las 5:50 de la mañana.<br />
       Y aun así respondiste.<br />
-      <span className="c-pink">Eso lo dice todo.</span>
+      Y encima resultamos ser del mismo lugar.<br />
+      <span className="c-pink">Eso no es casualidad.</span>
     </p></FadeIn>
   </div>,
 
@@ -337,6 +342,161 @@ const SECTIONS = [
     </p></FadeIn>
     <FadeIn delay={1.4}><p className="t-jp c-gold glow-gold" style={{ marginTop: "1.5rem", fontSize: "1.1rem" }}>
       ✦ &nbsp; te quiero &nbsp; ✦
+    </p></FadeIn>
+  </div>,
+
+  // 11 — ella (fotos)
+  <div key="11" className="text-block" style={{ maxWidth: 700 }}>
+    <FadeIn><p className="t-caption c-pink" style={{ marginBottom: "1rem" }}>así te veo yo</p></FadeIn>
+    <FadeIn delay={0.2}><h2 className="t-title c-white glow-white" style={{ marginBottom: "1.5rem" }}>
+      Cada foto tuya me dice algo<br />
+      que las palabras no alcanzan.
+    </h2></FadeIn>
+    <FadeIn delay={0.4}>
+      <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
+        <PhotoCard
+          src="/photos/leyre-manos.jpg"
+          alt="Leyre"
+          caption="Esa pose. Esos labios. Ese pelo. Dios mío."
+          glowColor="#ff4da6"
+          size="md"
+          delay={0.1}
+        />
+        <PhotoCard
+          src="/photos/leyre-gorra.jpg"
+          alt="Leyre con gorra"
+          caption="Con gorra y todo sigues siendo la más bonita del lugar."
+          glowColor="#d4b8ff"
+          size="md"
+          delay={0.3}
+        />
+      </div>
+    </FadeIn>
+    <FadeIn delay={0.7}><p className="t-verse c-lilac glow-lilac" style={{ marginTop: "1.5rem" }}>
+      Hay personas que se ven bonitas en fotos.<br />
+      Tú eres de las que se ven <em>reales</em>.<br />
+      Y eso vale mucho más.
+    </p></FadeIn>
+  </div>,
+
+  // 12 — ella fuerte
+  <div key="12" className="text-block" style={{ maxWidth: 700 }}>
+    <FadeIn><p className="t-caption c-gold" style={{ marginBottom: "1rem" }}>fuerte y suave al mismo tiempo</p></FadeIn>
+    <FadeIn delay={0.2}>
+      <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
+        <PhotoCard
+          src="/photos/leyre-musculo.jpg"
+          alt="Leyre fuerte"
+          caption="Esa foto me mató. Punto."
+          glowColor="#ff7733"
+          size="lg"
+          delay={0.1}
+        />
+        <PhotoCard
+          src="/photos/leyre-rizado.jpg"
+          alt="Leyre pelo rizado"
+          caption="Tu pelo rizado suelto es una de mis cosas favoritas."
+          glowColor="#ffb8d4"
+          size="lg"
+          delay={0.3}
+        />
+      </div>
+    </FadeIn>
+    <FadeIn delay={0.6}><p className="t-body" style={{ marginTop: "1.5rem" }}>
+      Esa foto de perfil con la luz dramática...<br />
+      no sé si eras consciente de lo que estabas haciendo<br />
+      pero yo sí lo noté.<br />
+      <span className="c-gold">Eres impresionante, Leyre.</span>
+    </p></FadeIn>
+  </div>,
+
+  // 13 — nosotros
+  <div key="13" className="text-block" style={{ maxWidth: 700 }}>
+    <FadeIn><p className="t-caption c-lilac" style={{ marginBottom: "1rem" }}>nosotros</p></FadeIn>
+    <FadeIn delay={0.2}><h2 className="t-title c-white glow-white" style={{ marginBottom: "1.5rem" }}>
+      La primera vez que estuvimos<br />
+      en el mismo lugar al mismo tiempo.
+    </h2></FadeIn>
+    <FadeIn delay={0.35}>
+      <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
+        <PhotoCard
+          src="/photos/juntos-1.jpg"
+          alt="Nosotros juntos"
+          caption="Esa bufanda roja. Esa sonrisa tuya. No me la olvido."
+          glowColor="#ff4da6"
+          size="lg"
+          delay={0.1}
+        />
+        <PhotoCard
+          src="/photos/juntos-2.jpg"
+          alt="Nosotros abrazados"
+          caption="Así quiero estar siempre. Cerca."
+          glowColor="#d4b8ff"
+          size="lg"
+          delay={0.3}
+        />
+      </div>
+    </FadeIn>
+    <FadeIn delay={0.7}><p className="t-verse c-pink glow-pink" style={{ marginTop: "1.5rem" }}>
+      Hay fotos que guardan momentos.<br />
+      Y hay fotos que guardan <em>todo</em>.<br />
+      Estas son de las segundas.
+    </p></FadeIn>
+  </div>,
+
+  // 14 — las manos
+  <div key="14" className="text-block" style={{ maxWidth: 560 }}>
+    <FadeIn><p className="t-caption c-gold" style={{ marginBottom: "1rem" }}>la foto que más me gusta de todas</p></FadeIn>
+    <FadeIn delay={0.25}>
+      <PhotoCard
+        src="/photos/manos.jpg"
+        alt="Nuestras manos"
+        caption="Nuestras manos. Naturaleza de fondo. Silencio. Perfecto."
+        glowColor="#f5d98a"
+        size="full"
+        delay={0}
+      />
+    </FadeIn>
+    <FadeIn delay={0.6}><p className="t-body" style={{ marginTop: "1.5rem" }}>
+      Esa foto la tengo guardada en el corazón.<br />
+      Dentro de una carpa, con el campo verde afuera,<br />
+      y nuestras manos así, sin decir nada,<br />
+      diciéndolo todo.
+    </p></FadeIn>
+    <FadeIn delay={0.9}><p className="t-verse c-gold glow-gold" style={{ marginTop: "1rem" }}>
+      Quiero más momentos así contigo.<br />
+      Quietos. Juntos. Sin prisa.
+    </p></FadeIn>
+  </div>,
+
+  // 15 — Barak
+  <div key="15" className="text-block" style={{ maxWidth: 560 }}>
+    <FadeIn><p className="t-caption c-sakura" style={{ marginBottom: "1rem" }}>y también él</p></FadeIn>
+    <FadeIn delay={0.2}><h2 className="t-title c-white" style={{ marginBottom: "1.2rem" }}>
+      Barak.
+    </h2></FadeIn>
+    <FadeIn delay={0.35}>
+      <PhotoCard
+        src="/photos/barak.jpg"
+        alt="Barak el pekinés"
+        caption="Dormidito como si el mundo no existiera. Igual que tú a las 5:50am."
+        glowColor="#f5d98a"
+        size="full"
+        delay={0}
+      />
+    </FadeIn>
+    <FadeIn delay={0.6}><p className="t-body" style={{ marginTop: "1.5rem" }}>
+      Sé que lo quieres como a un hijo.<br />
+      Y eso me dice mucho de ti.<br />
+      Que tienes un corazón enorme<br />
+      que cabe todo lo que amas.
+    </p></FadeIn>
+    <FadeIn delay={0.9}><p className="t-verse c-lilac glow-lilac" style={{ marginTop: "1rem" }}>
+      Algún día quiero conocerlo en persona.<br />
+      Y que él también me acepte. jeje.
+    </p></FadeIn>
+    <FadeIn delay={1.2}><p className="t-jp c-gold glow-gold" style={{ marginTop: "1.2rem" }}>
+      ✦ &nbsp; te quiero, Leyre &nbsp; ✦
     </p></FadeIn>
   </div>,
 ];
