@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { motion, useInView, AnimatePresence } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 
-const CosmosWorld = dynamic(() => import("@/components/CosmosWorld"), {
+const SceneCanvas = dynamic(() => import("@/components/SceneCanvas"), {
   ssr: false,
   loading: () => null,
 });
@@ -247,13 +247,9 @@ export default function Home() {
 
   return (
     <>
-      {/* Canvas 3D cosmos */}
+      {/* Canvas 3D — shader nebulosa + partículas morphing */}
       <div style={{ position: "fixed", inset: 0, zIndex: 0 }}>
-        <CosmosWorld
-          scrollRef={scrollRef as React.RefObject<number>}
-          onObjectClick={() => {}}
-          activeObject={null}
-        />
+        <SceneCanvas scrollProgress={scrollRef as React.RefObject<number>} />
       </div>
 
       {/* Cursor */}
