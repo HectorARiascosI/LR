@@ -6,7 +6,6 @@ import * as THREE from "three";
 import { Vector2 } from "three";
 import KoreanSkyShader from "./KoreanSkyShader";
 import SakuraPetals from "./SakuraPetals";
-import FlowerBouquet from "./FlowerBouquet";
 import ParticleMorph from "./ParticleMorph";
 
 interface SceneCanvasProps {
@@ -37,9 +36,6 @@ export default function SceneCanvas({ scrollProgress, section }: SceneCanvasProp
 
       {/* Partículas morphing — siempre activas */}
       <ParticleMorph scrollProgress={scrollProgress} />
-
-      {/* Ramo de flores — siempre visible, centrado */}
-      <FlowerBouquet />
 
       <EffectComposer multisampling={0}>
         <Bloom
