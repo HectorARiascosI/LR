@@ -1,24 +1,19 @@
 "use client";
 /**
- * NeonHeart — Corazón neón 3D girando que emite partículas a toda la pantalla
- * - Forma de corazón real con ExtrudeGeometry
- * - Shader fresnel + glow pulsante
- * - 600 partículas emitidas desde la superficie del corazón
- * - Rotación continua suave
+ * NeonHeart — Corazón neón 3D grande, girando suavemente
+ * Partículas sutiles que no distraen de la lectura
  */
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
-// ─── SHADER CORAZÓN ───────────────────────────────────────────────────────────
 const HEART_VERT = `
 varying vec3 vNormal;
 varying vec3 vViewDir;
 uniform float uTime;
 void main(){
   vec3 pos = position;
-  // Latido suave
-  float beat = 1.0 + sin(uTime * 2.2) * 0.04;
+  float beat = 1.0 + sin(uTime * 1.8) * 0.03;
   pos *= beat;
   vec4 mv = modelViewMatrix * vec4(pos, 1.0);
   vNormal  = normalize(normalMatrix * normal);
@@ -33,19 +28,14 @@ varying vec3 vViewDir;
 uniform float uTime;
 void main(){
   float fr = pow(1.0 - abs(dot(vNormal, vViewDir)), 1.8);
-  float pulse = 0.7 + sin(uTime * 2.2) * 0.3;
-
-  // Rosa neón vibrante
-  vec3 innerCol = vec3(1.0, 0.15, 0.45) * pulse;
-  vec3 edgeCol  = vec3(1.0, 0.55, 0.85);
-
-  vec3 col = mix(innerCol, edgeCol, fr);
-  float alpha = 0.35 + fr * 0.6;
-
-  gl_FragColor = vec4(col, clamp(alpha, 0.0, 0.95));
+  float pulse = 0.75 + sin(uTime * 1.8) * 0.25;
+  vec3 inner = vec3(1.0, 0.12, 0.42) * pulse;
+  vec3 edge  = vec3(1.0, 0.6, 0.82);
+  vec3 col = mix(inner, edge, fr);
+  float alpha = 0.3 + fr * 0.55;
+  gl_FragColor = vec4(col, clamp(alpha, 0.0, 0.92));
 }`;
 
-// ─── SHADER PARTÍCULAS ────────────────────────────────────────────────────────
 const PART_VERT = `
 attribute vec3  aVelocity;
 attribute float aLife;
@@ -54,19 +44,16 @@ attribute vec3  aColor;
 uniform float   uTime;
 varying vec3    vColor;
 varying float   vAlpha;
-
 void main(){
-  float t = mod(uTime * 0.5 + aLife, 1.0);
-  vec3 pos = position + aVelocity * t * 4.0;
-  // Gravedad suave
-  pos.y -= t * t * 1.2;
-
+  float t = mod(uTime * 0.28 + aLife, 1.0);
+  vec3 pos = position + aVelocity * t * 3.5;
+  pos.y -= t * t * 0.8;
   vec4 mv = modelViewMatrix * vec4(pos, 1.0);
   gl_Position = projectionMatrix * mv;
-  gl_PointSize = aSize * (1.0 / -mv.z) * (1.0 - t * 0.6);
-
+  gl_PointSize = aSize * (1.0 / -mv.z) * (1.0 - t * 0.7);
   vColor = aColor;
-  vAlpha = (1.0 - smoothstep(0.6, 1.0, t)) * 0.85;
+  // Muy sutiles — no distraen
+  vAlpha = (1.0 - smoothstep(0.5, 1.0, t)) * 0.45;
 }`;
 
 const PART_FRAG = `
@@ -77,42 +64,39 @@ void main(){
   vec2 uv = gl_PointCoord - 0.5;
   float d = length(uv);
   if(d > 0.5) discard;
-  float a = (1.0 - smoothstep(0.15, 0.5, d)) * vAlpha;
-  float glow = exp(-d * 6.0) * 0.5;
-  gl_FragColor = vec4(vColor + glow, a);
+  float a = (1.0 - smoothstep(0.1, 0.5, d)) * vAlpha;
+  gl_FragColor = vec4(vColor, a);
 }`;
 
-// ─── FORMA DE CORAZÓN ─────────────────────────────────────────────────────────
 function makeHeartShape(size: number): THREE.Shape {
   const s = new THREE.Shape();
   const k = size;
   s.moveTo(0, k * 0.25);
-  s.bezierCurveTo(-k * 0.05, k * 0.25, -k * 0.5, k * 0.7, -k * 0.5, k * 0.35);
-  s.bezierCurveTo(-k * 0.5, k * 0.05, -k * 0.25, -k * 0.15, 0, -k * 0.5);
-  s.bezierCurveTo(k * 0.25, -k * 0.15, k * 0.5, k * 0.05, k * 0.5, k * 0.35);
-  s.bezierCurveTo(k * 0.5, k * 0.7, k * 0.05, k * 0.25, 0, k * 0.25);
+  s.bezierCurveTo(-k*0.05, k*0.25, -k*0.5, k*0.7, -k*0.5, k*0.35);
+  s.bezierCurveTo(-k*0.5, k*0.05, -k*0.25, -k*0.15, 0, -k*0.5);
+  s.bezierCurveTo(k*0.25, -k*0.15, k*0.5, k*0.05, k*0.5, k*0.35);
+  s.bezierCurveTo(k*0.5, k*0.7, k*0.05, k*0.25, 0, k*0.25);
   return s;
 }
 
-// ─── POSICIÓN EN SUPERFICIE DEL CORAZÓN ──────────────────────────────────────
 function heartPoint(t: number, size: number): [number, number] {
   const k = size;
   const x = k * 16 * Math.pow(Math.sin(t), 3) * 0.062;
-  const y = k * (13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t)) * 0.062;
+  const y = k * (13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t)) * 0.062;
   return [x, y - k * 0.1];
 }
 
 export default function NeonHeart() {
   const groupRef = useRef<THREE.Group>(null);
 
-  // Geometría del corazón
+  // Corazón más grande — size 1.4 en vez de 0.7
   const heartGeo = useMemo(() => {
-    const shape = makeHeartShape(0.7);
+    const shape = makeHeartShape(1.4);
     return new THREE.ExtrudeGeometry(shape, {
-      depth: 0.22,
+      depth: 0.38,
       bevelEnabled: true,
-      bevelSize: 0.04,
-      bevelThickness: 0.04,
+      bevelSize: 0.06,
+      bevelThickness: 0.06,
       bevelSegments: 4,
       steps: 1,
     });
@@ -128,52 +112,44 @@ export default function NeonHeart() {
     blending: THREE.AdditiveBlending,
   }), []);
 
-  // Glow exterior
   const glowMat = useMemo(() => new THREE.MeshBasicMaterial({
     color: new THREE.Color("#ff1a5e"),
     transparent: true,
-    opacity: 0.08,
+    opacity: 0.06,
     side: THREE.BackSide,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   }), []);
 
-  // Partículas emitidas desde el corazón
+  // Solo 200 partículas, muy sutiles
   const { partGeo, partMat } = useMemo(() => {
-    const N = 600;
+    const N = 200;
     const pos = new Float32Array(N * 3);
     const vel = new Float32Array(N * 3);
     const life = new Float32Array(N);
     const size = new Float32Array(N);
     const col = new Float32Array(N * 3);
 
-    const COLORS = [
-      [1.0, 0.2, 0.5],   // rosa neón
-      [1.0, 0.5, 0.8],   // rosa claro
-      [0.9, 0.1, 0.4],   // rojo rosa
-      [1.0, 0.8, 0.9],   // blanco rosado
-      [0.8, 0.2, 1.0],   // lila
-    ];
-
     for (let i = 0; i < N; i++) {
       const t = (i / N) * Math.PI * 2;
-      const [hx, hy] = heartPoint(t, 0.7);
-      pos[i*3]   = hx + (Math.random() - 0.5) * 0.08;
-      pos[i*3+1] = hy + (Math.random() - 0.5) * 0.08;
-      pos[i*3+2] = (Math.random() - 0.5) * 0.22;
+      const [hx, hy] = heartPoint(t, 1.4);
+      pos[i*3]   = hx + (Math.random()-0.5)*0.12;
+      pos[i*3+1] = hy + (Math.random()-0.5)*0.12;
+      pos[i*3+2] = (Math.random()-0.5)*0.38;
 
-      // Velocidad: hacia afuera desde el centro del corazón
       const angle = Math.random() * Math.PI * 2;
-      const speed = 0.4 + Math.random() * 1.2;
+      const speed = 0.2 + Math.random() * 0.6;
       vel[i*3]   = Math.cos(angle) * speed;
-      vel[i*3+1] = Math.sin(angle) * speed * 0.7 + 0.3;
-      vel[i*3+2] = (Math.random() - 0.5) * speed * 0.5;
+      vel[i*3+1] = Math.sin(angle) * speed * 0.5 + 0.15;
+      vel[i*3+2] = (Math.random()-0.5) * speed * 0.3;
 
       life[i] = Math.random();
-      size[i] = 60 + Math.random() * 80;
+      size[i] = 30 + Math.random() * 40;
 
-      const c = COLORS[Math.floor(Math.random() * COLORS.length)];
-      col[i*3] = c[0]; col[i*3+1] = c[1]; col[i*3+2] = c[2];
+      // Solo tonos rosa/lila suaves
+      const r = Math.random();
+      if (r < 0.5) { col[i*3]=1.0; col[i*3+1]=0.4; col[i*3+2]=0.7; }
+      else         { col[i*3]=0.8; col[i*3+1]=0.4; col[i*3+2]=1.0; }
     }
 
     const g = new THREE.BufferGeometry();
@@ -199,21 +175,17 @@ export default function NeonHeart() {
     const t = clock.elapsedTime;
     heartMat.uniforms.uTime.value = t;
     partMat.uniforms.uTime.value  = t;
-
     if (groupRef.current) {
-      groupRef.current.rotation.y = t * 0.55;
-      groupRef.current.rotation.x = Math.sin(t * 0.3) * 0.18;
-      groupRef.current.position.y = Math.sin(t * 0.6) * 0.08;
+      groupRef.current.rotation.y = t * 0.4;
+      groupRef.current.rotation.x = Math.sin(t * 0.25) * 0.12;
+      groupRef.current.position.y = Math.sin(t * 0.5) * 0.06;
     }
   });
 
   return (
     <group ref={groupRef} position={[0, 0, 0]}>
-      {/* Glow exterior */}
-      <mesh geometry={heartGeo} material={glowMat} scale={[1.15, 1.15, 1.15]} />
-      {/* Corazón principal */}
-      <mesh geometry={heartGeo} material={heartMat} position={[-0.35, -0.35, -0.11]} />
-      {/* Partículas */}
+      <mesh geometry={heartGeo} material={glowMat} scale={[1.12, 1.12, 1.12]} />
+      <mesh geometry={heartGeo} material={heartMat} position={[-0.7, -0.7, -0.19]} />
       <points geometry={partGeo} material={partMat} />
     </group>
   );

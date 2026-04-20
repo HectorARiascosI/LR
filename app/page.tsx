@@ -230,14 +230,16 @@ const SECTIONS = [
     </p></FadeIn>
   </div>,
 
-  // 8 — las manos (foto de la carpa)
+  // 8 — el momento de la carpa
   <div key="8" className="text-block" style={{ maxWidth:560 }}>
-    <FadeIn delay={0.25}>
-      <PhotoCard src="/photos/manos.jpg" alt="Nuestras manos" caption="Dentro de una carpa. El campo verde afuera. Nuestras manos así. Perfecto." glowColor="#f5d98a" size="full" delay={0} />
-    </FadeIn>
-    <FadeIn delay={0.6}><p className="t-body" style={{ marginTop:"1.5rem" }}>
-      Sin decir nada,<br />
-      diciéndolo todo.<br />
+    <FadeIn delay={0.2}><p className="t-verse c-gold glow-gold">
+      Dentro de una carpa.<br />
+      El campo verde afuera.<br />
+      Nuestras manos entrelazadas.<br />
+      Sin decir nada, diciéndolo todo.
+    </p></FadeIn>
+    <FadeIn delay={0.6}><div className="divider" /></FadeIn>
+    <FadeIn delay={0.8}><p className="t-body">
       Quiero más momentos así contigo.<br />
       <span className="c-gold">Quietos. Juntos. Sin prisa.</span>
     </p></FadeIn>
