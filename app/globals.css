@@ -1,48 +1,27 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Noto+Serif+JP:wght@200;300;400&family=Inter:wght@200;300&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Noto+Serif+JP:wght@200;300;400&family=Inter:wght@200;300;400&display=swap');
 @import "tailwindcss";
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html {
-  background: #000;
-  scroll-behavior: auto; /* lenis handles this */
-}
+html { background: #000; scroll-behavior: auto; }
+body { background: #000; overflow-x: hidden; -webkit-font-smoothing: antialiased; color: #fff; }
 
-body {
-  background: #000;
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
-  color: #fff;
-}
-
-/* Lenis smooth scroll */
+/* Lenis */
 html.lenis { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto; }
-.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
 .lenis.lenis-stopped { overflow: hidden; }
 
 ::-webkit-scrollbar { width: 0; }
 * { cursor: none; }
 
-/* ── FONTS ── */
-.font-display { font-family: 'Cormorant Garamond', Georgia, serif; }
-.font-jp      { font-family: 'Noto Serif JP', serif; }
-.font-body    { font-family: 'Inter', system-ui, sans-serif; }
-
-/* ── CANVAS FIXED FULL ── */
+/* ── CANVAS ── */
 #world-canvas {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  z-index: 0;
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%; z-index: 0;
 }
 
-/* ── SCROLL CONTAINER ── */
-#scroll-root {
-  position: relative;
-  z-index: 10;
-  pointer-events: none;
-}
+/* ── SCROLL ROOT ── */
+#scroll-root { position: relative; z-index: 10; pointer-events: none; }
 
 /* ── SECTION ── */
 .scene-section {
@@ -53,74 +32,81 @@ html.lenis { height: auto; }
   position: relative;
 }
 
-/* ── TEXT BLOCKS ── */
+/* ── TEXT BLOCK — fondo sólido para legibilidad ── */
 .text-block {
   text-align: center;
-  max-width: 680px;
-  padding: 0 2rem;
+  max-width: 640px;
+  padding: 2.5rem 3rem;
+  /* Fondo semiopaco que garantiza legibilidad sobre cualquier escena 3D */
+  background: rgba(3, 1, 15, 0.72);
+  border: 1px solid rgba(180, 142, 232, 0.15);
+  border-radius: 20px;
+  box-shadow:
+    0 0 60px rgba(3, 1, 15, 0.9),
+    0 0 0 1px rgba(180, 142, 232, 0.08),
+    inset 0 1px 0 rgba(255,255,255,0.04);
   will-change: opacity, transform;
+  margin: 0 1.5rem;
 }
 
-/* ── HERO TEXT ── */
+/* ── TIPOGRAFÍA ── */
 .t-hero {
   font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(4rem, 12vw, 9rem);
+  font-size: clamp(3.5rem, 10vw, 7.5rem);
   font-weight: 300;
-  line-height: 0.9;
+  line-height: 0.92;
   letter-spacing: -0.02em;
 }
-
 .t-title {
   font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(2rem, 5vw, 3.8rem);
+  font-size: clamp(1.8rem, 4.5vw, 3.2rem);
   font-weight: 300;
-  line-height: 1.1;
+  line-height: 1.15;
 }
-
 .t-body {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(0.9rem, 1.8vw, 1.1rem);
-  font-weight: 200;
-  line-height: 1.9;
-  letter-spacing: 0.04em;
+  font-size: clamp(0.92rem, 1.8vw, 1.08rem);
+  font-weight: 300;
+  line-height: 1.95;
+  letter-spacing: 0.03em;
+  color: rgba(255,255,255,0.88);
 }
-
 .t-caption {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(0.65rem, 1.2vw, 0.78rem);
-  font-weight: 300;
-  letter-spacing: 0.4em;
+  font-size: clamp(0.62rem, 1.1vw, 0.75rem);
+  font-weight: 400;
+  letter-spacing: 0.42em;
   text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
 }
-
 .t-verse {
   font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(1.1rem, 2.5vw, 1.6rem);
+  font-size: clamp(1.05rem, 2.2vw, 1.5rem);
   font-weight: 300;
   font-style: italic;
-  line-height: 1.7;
+  line-height: 1.75;
+  color: rgba(255,255,255,0.9);
 }
-
 .t-jp {
   font-family: 'Noto Serif JP', serif;
-  font-size: clamp(0.8rem, 1.5vw, 1rem);
+  font-size: clamp(0.78rem, 1.4vw, 0.95rem);
   font-weight: 200;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.22em;
+  color: rgba(255,255,255,0.45);
 }
 
-/* ── COLORS ── */
-.c-white   { color: rgba(255,255,255,0.95); }
-.c-lilac   { color: #d4b8ff; }
-.c-pink    { color: #ffb8d4; }
-.c-gold    { color: #f5d98a; }
-.c-dim     { color: rgba(255,255,255,0.45); }
-.c-sakura  { color: #ffb7c5; }
+/* ── COLORES ── */
+.c-white  { color: rgba(255,255,255,0.96); }
+.c-lilac  { color: #d4b8ff; }
+.c-pink   { color: #ffb8d4; }
+.c-gold   { color: #f5d98a; }
+.c-sakura { color: #ffb7c5; }
 
 /* ── GLOW ── */
-.glow-lilac { text-shadow: 0 0 40px rgba(180,142,232,0.8), 0 0 80px rgba(180,142,232,0.3); }
-.glow-pink  { text-shadow: 0 0 40px rgba(255,184,212,0.8), 0 0 80px rgba(255,184,212,0.3); }
-.glow-gold  { text-shadow: 0 0 40px rgba(245,217,138,0.7), 0 0 80px rgba(245,217,138,0.25); }
-.glow-white { text-shadow: 0 0 60px rgba(255,255,255,0.4); }
+.glow-lilac { text-shadow: 0 0 30px rgba(180,142,232,0.9), 0 0 60px rgba(180,142,232,0.4); }
+.glow-pink  { text-shadow: 0 0 30px rgba(255,184,212,0.9), 0 0 60px rgba(255,184,212,0.4); }
+.glow-gold  { text-shadow: 0 0 30px rgba(245,217,138,0.8), 0 0 60px rgba(245,217,138,0.3); }
+.glow-white { text-shadow: 0 0 40px rgba(255,255,255,0.5); }
 
 /* ── SHIMMER ── */
 @keyframes shimmer {
@@ -128,7 +114,9 @@ html.lenis { height: auto; }
   100% { background-position: 300% center; }
 }
 .text-shimmer {
-  background: linear-gradient(90deg, #b48ee8 0%, #d4b8ff 20%, #ffb8d4 40%, #f5d98a 60%, #d4b8ff 80%, #b48ee8 100%);
+  background: linear-gradient(90deg,
+    #b48ee8 0%, #d4b8ff 18%, #ffb8d4 36%,
+    #f5d98a 54%, #d4b8ff 72%, #b48ee8 100%);
   background-size: 300% auto;
   -webkit-background-clip: text;
   background-clip: text;
@@ -138,105 +126,107 @@ html.lenis { height: auto; }
 
 /* ── DIVIDER ── */
 .divider {
-  width: 120px;
+  width: 100px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(212,184,255,0.6), rgba(255,184,212,0.6), transparent);
-  margin: 1.5rem auto;
+  background: linear-gradient(90deg,
+    transparent, rgba(212,184,255,0.7), rgba(255,184,212,0.7), transparent);
+  margin: 1.4rem auto;
 }
 
 /* ── CHAT BUBBLES ── */
 .bubble-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  width: 100%;
-  max-width: 360px;
+  display: flex; flex-direction: column;
+  gap: 0.7rem; width: 100%; max-width: 340px; margin: 0 auto;
 }
 .bubble {
-  padding: 0.75rem 1.2rem;
-  border-radius: 18px;
+  padding: 0.7rem 1.1rem;
   font-family: 'Inter', sans-serif;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 300;
-  max-width: 80%;
+  max-width: 82%;
 }
 .bubble-sent {
   align-self: flex-end;
-  background: rgba(180,142,232,0.18);
-  border: 1px solid rgba(180,142,232,0.3);
+  background: rgba(180,142,232,0.22);
+  border: 1px solid rgba(180,142,232,0.35);
   border-radius: 18px 18px 4px 18px;
   color: #d4b8ff;
 }
 .bubble-recv {
   align-self: flex-start;
-  background: rgba(255,184,212,0.15);
-  border: 1px solid rgba(255,184,212,0.25);
+  background: rgba(255,184,212,0.18);
+  border: 1px solid rgba(255,184,212,0.28);
   border-radius: 18px 18px 18px 4px;
   color: #ffb8d4;
 }
 .bubble-time {
-  font-size: 0.6rem;
-  color: rgba(255,255,255,0.3);
-  letter-spacing: 0.1em;
-  margin-top: 0.2rem;
+  font-size: 0.58rem;
+  color: rgba(255,255,255,0.28);
+  letter-spacing: 0.08em;
+  margin-top: 0.18rem;
 }
 
-/* ── CUSTOM CURSOR ── */
+/* ── CURSOR ── */
 #cursor-dot, #cursor-ring {
-  position: fixed;
-  top: 0; left: 0;
-  pointer-events: none;
-  z-index: 9999;
+  position: fixed; top: 0; left: 0;
+  pointer-events: none; z-index: 9999;
   will-change: transform;
 }
 #cursor-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
+  width: 6px; height: 6px; border-radius: 50%;
   background: #d4b8ff;
   box-shadow: 0 0 10px rgba(212,184,255,0.9), 0 0 20px rgba(212,184,255,0.5);
 }
 #cursor-ring {
-  width: 30px; height: 30px;
-  border-radius: 50%;
-  border: 1px solid rgba(212,184,255,0.4);
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 1px solid rgba(212,184,255,0.45);
 }
 
-/* ── PROGRESS BAR ── */
+/* ── PROGRESS ── */
 #progress-bar {
-  position: fixed;
-  right: 1.5rem;
-  top: 50%;
+  position: fixed; right: 1.4rem; top: 50%;
   transform: translateY(-50%);
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  pointer-events: none;
+  z-index: 100; display: flex; flex-direction: column;
+  gap: 5px; pointer-events: none;
 }
 .progress-dot {
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  background: rgba(212,184,255,0.3);
-  transition: all 0.4s ease;
+  width: 3px; height: 3px; border-radius: 50%;
+  background: rgba(212,184,255,0.25);
+  transition: all 0.35s ease;
 }
 .progress-dot.active {
-  background: #d4b8ff;
-  height: 20px;
-  border-radius: 2px;
-  box-shadow: 0 0 8px rgba(212,184,255,0.6);
+  background: #d4b8ff; height: 18px; border-radius: 2px;
+  box-shadow: 0 0 8px rgba(212,184,255,0.7);
 }
 
-/* ── LABEL TOP LEFT ── */
+/* ── LABEL ── */
 #site-label {
-  position: fixed;
-  top: 1.5rem;
-  left: 1.5rem;
+  position: fixed; top: 1.4rem; left: 1.4rem;
   z-index: 100;
   font-family: 'Inter', sans-serif;
-  font-size: 0.6rem;
-  letter-spacing: 0.4em;
+  font-size: 0.58rem; letter-spacing: 0.42em;
   text-transform: uppercase;
-  color: rgba(180,142,232,0.5);
+  color: rgba(180,142,232,0.45);
   pointer-events: none;
+}
+
+/* ── AUDIO BUTTON ── */
+#audio-btn {
+  position: fixed; top: 1.4rem; right: 1.4rem;
+  z-index: 100;
+  background: rgba(3,1,15,0.7);
+  border: 1px solid rgba(180,142,232,0.3);
+  border-radius: 50%;
+  width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: rgba(212,184,255,0.7);
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  pointer-events: all;
+}
+#audio-btn:hover {
+  background: rgba(180,142,232,0.15);
+  border-color: rgba(180,142,232,0.6);
+  color: #d4b8ff;
 }

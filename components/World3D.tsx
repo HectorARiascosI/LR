@@ -1,40 +1,158 @@
 "use client";
-import { useRef, useMemo, useEffect } from "react";
+/**
+ * World3D — Escena 3D inmersiva completa
+ * - Robot animado con 14 animaciones reales (GLB oficial Three.js)
+ * - Suelo reflectante con MeshReflectorMaterial
+ * - 800 pétalos de sakura instanced (1 draw call)
+ * - Luna, montañas, árboles de sakura, estrellas
+ * - Cámara cinematográfica por scroll
+ * - Partículas mágicas
+ */
+import { useRef, useMemo, useEffect, Suspense } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import {
+  useGLTF,
+  useAnimations,
+  MeshReflectorMaterial,
+  Environment,
+  Stars as DreiStars,
+} from "@react-three/drei";
 import { Bloom, EffectComposer, Vignette } from "@react-three/postprocessing";
 import * as THREE from "three";
-import { createHeartShape } from "@/lib/forestGeometry";
 
-// ─── SAKURA PETALS — Instanced Mesh (1 draw call para 1500 pétalos) ───────────
-const PETAL_COUNT = 1500;
+// ─── ROBOT ANIMADO ────────────────────────────────────────────────────────────
+const ANIM_BY_SECTION: Record<number, string> = {
+  0: "Idle",
+  1: "Wave",
+  2: "Idle",
+  3: "Walking",
+  4: "Dance",
+  5: "ThumbsUp",
+  6: "Standing",
+  7: "Idle",
+  8: "Yes",
+  9: "Wave",
+};
+
+interface RobotProps {
+  section: number;
+  position?: [number, number, number];
+  scale?: number;
+}
+
+function Robot({ section, position = [0, 0, 0], scale = 1 }: RobotProps) {
+  const group = useRef<THREE.Group>(null);
+  const { scene, animations } = useGLTF("/models/robot.glb");
+  const { actions, mixer } = useAnimations(animations, group);
+  const prevAnim = useRef<string>("");
+
+  // Clonar escena para poder tener múltiples instancias
+  const clonedScene = useMemo(() => scene.clone(true), [scene]);
+
+  // Aplicar cel-shading toon a todos los materiales
+  useEffect(() => {
+    clonedScene.traverse((child: THREE.Object3D) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mesh = child as THREE.Mesh;
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        mats.forEach((mat, i) => {
+          const toon = new THREE.MeshToonMaterial({
+            color: (mat as THREE.MeshStandardMaterial).color ?? new THREE.Color("#888"),
+            emissive: new THREE.Color("#1a0a2e"),
+            emissiveIntensity: 0.05,
+          });
+          if (Array.isArray(mesh.material)) mesh.material[i] = toon;
+          else mesh.material = toon;
+        });
+      }
+    });
+  }, [clonedScene]);
+
+  useEffect(() => {
+    const animName = ANIM_BY_SECTION[section] ?? "Idle";
+    if (animName === prevAnim.current) return;
+
+    const prev = actions[prevAnim.current];
+    const next = actions[animName];
+    if (!next) return;
+
+    if (prev) {
+      prev.fadeOut(0.4);
+    }
+    next.reset().fadeIn(0.4).play();
+    prevAnim.current = animName;
+  }, [section, actions]);
+
+  // Iniciar animación idle al montar
+  useEffect(() => {
+    const idle = actions["Idle"];
+    if (idle) {
+      idle.play();
+      prevAnim.current = "Idle";
+    }
+  }, [actions]);
+
+  useFrame((_, delta) => {
+    mixer.update(delta);
+    // Leve balanceo de cabeza
+    if (group.current) {
+      group.current.rotation.y = Math.sin(Date.now() * 0.0003) * 0.15;
+    }
+  });
+
+  return (
+    <group ref={group} position={position} scale={[scale, scale, scale]}>
+      <primitive object={clonedScene} />
+    </group>
+  );
+}
+
+// ─── SUELO REFLECTANTE ────────────────────────────────────────────────────────
+function Ground() {
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+      <planeGeometry args={[50, 50]} />
+      <MeshReflectorMaterial
+        blur={[300, 100]}
+        resolution={512}
+        mixBlur={1}
+        mixStrength={40}
+        roughness={1}
+        depthScale={1.2}
+        minDepthThreshold={0.4}
+        maxDepthThreshold={1.4}
+        color="#050015"
+        metalness={0.6}
+        mirror={0}
+      />
+    </mesh>
+  );
+}
+
+// ─── PÉTALOS DE SAKURA ────────────────────────────────────────────────────────
+const PETAL_COUNT = 800;
 
 function SakuraPetals() {
   const meshRef = useRef<THREE.InstancedMesh>(null);
-  const dummy  = useMemo(() => new THREE.Object3D(), []);
+  const dummy   = useMemo(() => new THREE.Object3D(), []);
 
-  // Datos por pétalo — pre-calculados, nunca se recrean
-  const petals = useMemo(() => {
-    return Array.from({ length: PETAL_COUNT }, () => ({
-      x: (Math.random() - 0.5) * 40,
-      y: Math.random() * 30 - 5,
-      z: (Math.random() - 0.5) * 30 - 5,
-      rotX: Math.random() * Math.PI * 2,
-      rotZ: Math.random() * Math.PI * 2,
-      speed: 0.4 + Math.random() * 0.8,
-      swing: (Math.random() - 0.5) * 0.015,
-      phase: Math.random() * Math.PI * 2,
-      scale: 0.04 + Math.random() * 0.06,
-    }));
-  }, []);
+  const petals = useMemo(() => Array.from({ length: PETAL_COUNT }, () => ({
+    x: (Math.random() - 0.5) * 30,
+    y: 1 + Math.random() * 18,
+    z: (Math.random() - 0.5) * 20,
+    rx: Math.random() * Math.PI * 2,
+    rz: Math.random() * Math.PI * 2,
+    speed: 0.25 + Math.random() * 0.5,
+    swing: (Math.random() - 0.5) * 0.01,
+    phase: Math.random() * Math.PI * 2,
+    scale: 0.06 + Math.random() * 0.08,
+  })), []);
 
   const geo = useMemo(() => {
-    // Pétalo como elipse aplanada
-    const g = new THREE.PlaneGeometry(1, 0.6, 1, 1);
-    // Deformar para forma de pétalo
+    const g = new THREE.PlaneGeometry(1, 0.65);
     const pos = g.attributes.position.array as Float32Array;
     for (let i = 0; i < pos.length; i += 3) {
-      const x = pos[i], y = pos[i+1];
-      pos[i+1] = y + Math.abs(x) * 0.3; // curva
+      pos[i + 1] += Math.abs(pos[i]) * 0.3;
     }
     g.attributes.position.needsUpdate = true;
     g.computeVertexNormals();
@@ -42,10 +160,10 @@ function SakuraPetals() {
   }, []);
 
   const mat = useMemo(() => new THREE.MeshBasicMaterial({
-    color: new THREE.Color("#ffb7c5"),
+    color: "#ffb7c5",
     side: THREE.DoubleSide,
     transparent: true,
-    opacity: 0.75,
+    opacity: 0.85,
     depthWrite: false,
   }), []);
 
@@ -54,13 +172,11 @@ function SakuraPetals() {
     const t = clock.elapsedTime;
     for (let i = 0; i < PETAL_COUNT; i++) {
       const p = petals[i];
-      // Caída con balanceo
-      p.y -= p.speed * 0.008;
-      p.x += Math.sin(t * 0.3 + p.phase) * p.swing;
-      if (p.y < -8) { p.y = 22; p.x = (Math.random() - 0.5) * 40; }
-
+      p.y -= p.speed * 0.006;
+      p.x += Math.sin(t * 0.2 + p.phase) * p.swing;
+      if (p.y < 0) { p.y = 18; p.x = (Math.random() - 0.5) * 30; }
       dummy.position.set(p.x, p.y, p.z);
-      dummy.rotation.set(p.rotX + t * 0.3, t * 0.2 + p.phase, p.rotZ + t * 0.15);
+      dummy.rotation.set(p.rx + t * 0.2, t * 0.12 + p.phase, p.rz + t * 0.1);
       dummy.scale.setScalar(p.scale);
       dummy.updateMatrix();
       meshRef.current.setMatrixAt(i, dummy.matrix);
@@ -68,383 +184,305 @@ function SakuraPetals() {
     meshRef.current.instanceMatrix.needsUpdate = true;
   });
 
-  return <instancedMesh ref={meshRef} args={[geo, mat, PETAL_COUNT]} frustumCulled={false} />;
+  return (
+    <instancedMesh
+      ref={meshRef}
+      args={[geo, mat, PETAL_COUNT]}
+      frustumCulled={false}
+    />
+  );
 }
 
-// ─── LUNA ANIME ────────────────────────────────────────────────────────────────
-function AnimeMoon() {
-  const meshRef = useRef<THREE.Mesh>(null);
+// ─── LUNA ─────────────────────────────────────────────────────────────────────
+function Moon() {
   const glowRef = useRef<THREE.Mesh>(null);
-
-  const moonGeo = useMemo(() => new THREE.CircleGeometry(2.2, 64), []);
-  const moonMat = useMemo(() => new THREE.MeshBasicMaterial({
-    color: new THREE.Color("#fff8e8"),
-    transparent: true, opacity: 0.92,
-  }), []);
-  const glowGeo = useMemo(() => new THREE.CircleGeometry(3.5, 64), []);
-  const glowMat = useMemo(() => new THREE.MeshBasicMaterial({
-    color: new THREE.Color("#f5d98a"),
-    transparent: true, opacity: 0.12,
-    depthWrite: false,
-  }), []);
-
   useFrame(({ clock }) => {
-    if (!glowRef.current) return;
-    glowRef.current.material.opacity = 0.10 + Math.sin(clock.elapsedTime * 0.5) * 0.04;
+    if (glowRef.current) {
+      (glowRef.current.material as THREE.MeshBasicMaterial).opacity =
+        0.07 + Math.sin(clock.elapsedTime * 0.35) * 0.03;
+    }
   });
-
   return (
-    <group position={[8, 10, -25]}>
-      <mesh ref={glowRef} geometry={glowGeo} material={glowMat} />
-      <mesh ref={meshRef} geometry={moonGeo} material={moonMat} />
+    <group position={[8, 12, -28]}>
+      <mesh ref={glowRef}>
+        <circleGeometry args={[4.5, 64]} />
+        <meshBasicMaterial color="#f5d98a" transparent opacity={0.08} depthWrite={false} />
+      </mesh>
+      <mesh>
+        <circleGeometry args={[2.6, 64]} />
+        <meshBasicMaterial color="#fff9f0" />
+      </mesh>
     </group>
   );
 }
 
-// ─── MONTAÑAS ANIME (silueta) ──────────────────────────────────────────────────
-function AnimeMountains() {
+// ─── MONTAÑAS ─────────────────────────────────────────────────────────────────
+function Mountains() {
   const geo = useMemo(() => {
     const shape = new THREE.Shape();
-    shape.moveTo(-30, -4);
-    shape.lineTo(-20, 4);
-    shape.lineTo(-14, 1);
-    shape.lineTo(-8, 8);
-    shape.lineTo(-2, 3);
-    shape.lineTo(4, 10);
-    shape.lineTo(10, 4);
-    shape.lineTo(16, 7);
-    shape.lineTo(22, 2);
-    shape.lineTo(30, -4);
+    shape.moveTo(-40, -2);
+    shape.lineTo(-28, 6); shape.lineTo(-22, 2);
+    shape.lineTo(-15, 10); shape.lineTo(-8, 4);
+    shape.lineTo(-2, 12); shape.lineTo(4, 5);
+    shape.lineTo(10, 9);  shape.lineTo(17, 3);
+    shape.lineTo(24, 7);  shape.lineTo(32, 1);
+    shape.lineTo(40, -2);
     shape.closePath();
     return new THREE.ShapeGeometry(shape);
   }, []);
 
-  const mat = useMemo(() => new THREE.MeshBasicMaterial({
-    color: new THREE.Color("#0a0520"),
-    transparent: true, opacity: 0.85,
-    side: THREE.DoubleSide,
-  }), []);
-
-  return <mesh geometry={geo} material={mat} position={[0, -6, -20]} />;
+  return (
+    <mesh geometry={geo} position={[0, -2, -28]}>
+      <meshBasicMaterial color="#04021a" side={THREE.DoubleSide} />
+    </mesh>
+  );
 }
 
-// ─── ESTRELLAS — instanced, estáticas ─────────────────────────────────────────
-function Stars() {
-  const meshRef = useRef<THREE.InstancedMesh>(null);
-  const dummy = useMemo(() => new THREE.Object3D(), []);
+// ─── ÁRBOLES DE SAKURA ────────────────────────────────────────────────────────
+function SakuraTree({ x, z, s }: { x: number; z: number; s: number }) {
+  const ref = useRef<THREE.Group>(null);
+  const t0  = useRef(Math.random() * 10);
 
-  const starData = useMemo(() => Array.from({ length: 400 }, () => ({
-    x: (Math.random() - 0.5) * 80,
-    y: Math.random() * 30 + 5,
-    z: -30 + Math.random() * 10,
-    s: 0.02 + Math.random() * 0.06,
-    phase: Math.random() * Math.PI * 2,
-  })), []);
-
-  const geo = useMemo(() => new THREE.CircleGeometry(1, 6), []);
-  const mat = useMemo(() => new THREE.MeshBasicMaterial({
-    color: "#ffffff", transparent: true, opacity: 0.8,
+  const trunkMat = useMemo(() => new THREE.MeshToonMaterial({ color: "#3d1a08" }), []);
+  const leafMat  = useMemo(() => new THREE.MeshToonMaterial({
+    color: "#ffb7c5",
+    emissive: new THREE.Color("#6b2040"),
+    emissiveIntensity: 0.08,
   }), []);
-
-  useEffect(() => {
-    if (!meshRef.current) return;
-    starData.forEach((s, i) => {
-      dummy.position.set(s.x, s.y, s.z);
-      dummy.scale.setScalar(s.s);
-      dummy.updateMatrix();
-      meshRef.current!.setMatrixAt(i, dummy.matrix);
-    });
-    meshRef.current.instanceMatrix.needsUpdate = true;
-  }, [starData, dummy]);
 
   useFrame(({ clock }) => {
-    if (!meshRef.current) return;
-    const t = clock.elapsedTime;
-    // Twinkle — solo actualizar opacidad via material no es posible por instancia
-    // Usamos una rotación mínima para simular parpadeo
-    starData.forEach((s, i) => {
-      const flicker = 0.5 + Math.sin(t * 1.5 + s.phase) * 0.5;
-      dummy.position.set(s.x, s.y, s.z);
-      dummy.scale.setScalar(s.s * (0.7 + flicker * 0.3));
-      dummy.updateMatrix();
-      meshRef.current!.setMatrixAt(i, dummy.matrix);
-    });
-    meshRef.current.instanceMatrix.needsUpdate = true;
+    if (ref.current) {
+      ref.current.rotation.z = Math.sin(clock.elapsedTime * 0.35 + t0.current) * 0.012;
+    }
   });
 
-  return <instancedMesh ref={meshRef} args={[geo, mat, 400]} frustumCulled={false} />;
+  return (
+    <group ref={ref} position={[x, 0, z]} scale={[s, s, s]}>
+      <mesh position={[0, 0.9, 0]} material={trunkMat}>
+        <cylinderGeometry args={[0.09, 0.13, 1.8, 7]} />
+      </mesh>
+      <mesh position={[0, 2.2, 0]} material={leafMat}>
+        <sphereGeometry args={[0.8, 8, 6]} />
+      </mesh>
+      <mesh position={[-0.5, 1.9, 0.1]} material={leafMat}>
+        <sphereGeometry args={[0.55, 7, 5]} />
+      </mesh>
+      <mesh position={[0.5, 2.0, -0.1]} material={leafMat}>
+        <sphereGeometry args={[0.5, 7, 5]} />
+      </mesh>
+    </group>
+  );
 }
 
-// ─── CORAZÓN 3D CON PARTÍCULAS ─────────────────────────────────────────────────
-function Heart3D({ visible }: { visible: boolean }) {
-  const groupRef = useRef<THREE.Group>(null);
+function Forest() {
+  const trees = useMemo(() => [
+    { x: -6, z: -5, s: 1.1 }, { x: -8, z: -3, s: 0.9 }, { x: -10, z: -6, s: 1.3 },
+    { x:  6, z: -5, s: 1.0 }, { x:  8, z: -3, s: 1.2 }, { x:  10, z: -6, s: 0.85 },
+    { x: -5, z: -9, s: 1.4 }, { x:  5, z: -9, s: 1.1 }, { x:  0,  z: -10, s: 1.2 },
+    { x: -12,z: -4, s: 0.8 }, { x:  12, z: -4, s: 0.9 },
+    { x: -3, z: -12, s: 1.0 }, { x: 3, z: -12, s: 1.1 },
+  ], []);
+
+  return <>{trees.map((t: { x: number; z: number; s: number }, i: number) => <SakuraTree key={i} {...t} />)}</>;
+}
+
+// ─── PARTÍCULAS MÁGICAS ───────────────────────────────────────────────────────
+function MagicParticles({ active }: { active: boolean }) {
+  const ref   = useRef<THREE.Points>(null);
   const opRef = useRef(0);
 
-  const heartGeo = useMemo(() => {
-    const shape = createHeartShape();
-    const geo = new THREE.ExtrudeGeometry(shape, {
-      depth: 0.2, bevelEnabled: true, bevelSegments: 4,
-      steps: 2, bevelSize: 0.06, bevelThickness: 0.06,
-    });
-    geo.center();
-    geo.scale(0.6, 0.6, 0.6);
-    return geo;
-  }, []);
-
-  const heartMat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: "#d4b8ff",
-    emissive: new THREE.Color("#8b1a4a"),
-    emissiveIntensity: 0.8,
-    metalness: 0.4,
-    roughness: 0.3,
-    transparent: true,
-    opacity: 0,
-  }), []);
-
-  // Partículas orbitando el corazón
-  const orbitGeo = useMemo(() => {
-    const count = 200;
-    const pos = new Float32Array(count * 3);
-    const col = new Float32Array(count * 3);
+  const { geo, mat } = useMemo(() => {
+    const count = 250;
+    const pos   = new Float32Array(count * 3);
+    const col   = new Float32Array(count * 3);
+    const ph    = new Float32Array(count);
     for (let i = 0; i < count; i++) {
       const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(2 * Math.random() - 1);
-      const r = 1.2 + Math.random() * 0.8;
-      pos[i*3]   = r * Math.sin(phi) * Math.cos(theta);
-      pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
-      pos[i*3+2] = r * Math.cos(phi);
-      // Lila / rosa / dorado
+      const r = 0.8 + Math.random() * 3;
+      pos[i*3]   = Math.cos(theta) * r;
+      pos[i*3+1] = Math.random() * 4;
+      pos[i*3+2] = Math.sin(theta) * r;
+      ph[i] = Math.random() * Math.PI * 2;
       const c = Math.random();
-      if (c < 0.5) { col[i*3]=0.83; col[i*3+1]=0.72; col[i*3+2]=1.0; }
-      else if (c < 0.8) { col[i*3]=1.0; col[i*3+1]=0.72; col[i*3+2]=0.83; }
-      else { col[i*3]=0.96; col[i*3+1]=0.85; col[i*3+2]=0.54; }
+      if (c < 0.5)      { col[i*3]=0.83; col[i*3+1]=0.72; col[i*3+2]=1.0; }
+      else if (c < 0.8) { col[i*3]=1.0;  col[i*3+1]=0.72; col[i*3+2]=0.83; }
+      else               { col[i*3]=0.96; col[i*3+1]=0.85; col[i*3+2]=0.54; }
     }
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-    g.setAttribute("color", new THREE.BufferAttribute(col, 3));
-    return g;
-  }, []);
-
-  const orbitMat = useMemo(() => new THREE.PointsMaterial({
-    size: 0.05, vertexColors: true, transparent: true, opacity: 0,
-    blending: THREE.AdditiveBlending, depthWrite: false,
-  }), []);
-
-  useFrame(({ clock }) => {
-    if (!groupRef.current) return;
-    const t = clock.elapsedTime;
-    const target = visible ? 1 : 0;
-    opRef.current += (target - opRef.current) * 0.03;
-    heartMat.opacity = opRef.current * 0.9;
-    orbitMat.opacity = opRef.current * 0.7;
-
-    if (opRef.current > 0.01) {
-      const beat = Math.sin(t * 1.2 * Math.PI * 2);
-      groupRef.current.scale.setScalar(1 + beat * 0.06);
-      groupRef.current.rotation.y = Math.sin(t * 0.25) * 0.5;
-      heartMat.emissiveIntensity = 0.6 + beat * 0.5;
-    }
-  });
-
-  return (
-    <group ref={groupRef} position={[0, 0, 0]}>
-      <mesh geometry={heartGeo} material={heartMat} />
-      <points geometry={orbitGeo} material={orbitMat} />
-      <pointLight color="#d4b8ff" intensity={0} distance={6} position={[0,0,1]} />
-    </group>
-  );
-}
-
-// ─── TORII GATE (puerta japonesa) ─────────────────────────────────────────────
-function ToriiGate() {
-  const mat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: "#8b1a1a",
-    emissive: new THREE.Color("#3a0808"),
-    emissiveIntensity: 0.3,
-    roughness: 0.7,
-  }), []);
-
-  const pillarGeo = useMemo(() => new THREE.CylinderGeometry(0.12, 0.15, 5, 8), []);
-  const beamGeo   = useMemo(() => new THREE.BoxGeometry(5.5, 0.22, 0.22), []);
-  const topGeo    = useMemo(() => new THREE.BoxGeometry(6.2, 0.18, 0.28), []);
-
-  return (
-    <group position={[0, -2, -8]}>
-      <mesh geometry={pillarGeo} material={mat} position={[-2.2, 0, 0]} />
-      <mesh geometry={pillarGeo} material={mat} position={[ 2.2, 0, 0]} />
-      <mesh geometry={beamGeo}   material={mat} position={[0, 2.0, 0]} />
-      <mesh geometry={topGeo}    material={mat} position={[0, 2.4, 0]} />
-    </group>
-  );
-}
-
-// ─── PARTÍCULAS DE FONDO (nebulosa) ───────────────────────────────────────────
-function NebulaParticles() {
-  const ref = useRef<THREE.Points>(null);
-
-  const { geo, mat } = useMemo(() => {
-    const count = 800;
-    const pos = new Float32Array(count * 3);
-    const col = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      pos[i*3]   = (Math.random() - 0.5) * 60;
-      pos[i*3+1] = (Math.random() - 0.5) * 40;
-      pos[i*3+2] = -20 + Math.random() * 10;
-      const r = Math.random();
-      if (r < 0.4) { col[i*3]=0.7; col[i*3+1]=0.55; col[i*3+2]=0.9; }
-      else if (r < 0.7) { col[i*3]=0.9; col[i*3+1]=0.55; col[i*3+2]=0.7; }
-      else { col[i*3]=0.96; col[i*3+1]=0.85; col[i*3+2]=0.54; }
-    }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-    g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+    g.setAttribute("color",    new THREE.BufferAttribute(col, 3));
+    g.setAttribute("phase",    new THREE.BufferAttribute(ph, 1));
     const m = new THREE.PointsMaterial({
-      size: 0.08, vertexColors: true, transparent: true, opacity: 0.35,
+      size: 0.07, vertexColors: true, transparent: true, opacity: 0,
       blending: THREE.AdditiveBlending, depthWrite: false,
     });
     return { geo: g, mat: m };
   }, []);
 
   useFrame(({ clock }) => {
-    if (ref.current) ref.current.rotation.z = clock.elapsedTime * 0.005;
+    if (!ref.current) return;
+    const t = clock.elapsedTime;
+    opRef.current += ((active ? 0.75 : 0) - opRef.current) * 0.035;
+    mat.opacity = opRef.current;
+    const pos = geo.attributes.position.array as Float32Array;
+    const ph  = geo.attributes.phase.array as Float32Array;
+    for (let i = 0; i < 250; i++) {
+      pos[i*3+1] += 0.005;
+      pos[i*3]   += Math.sin(t * 0.4 + ph[i]) * 0.002;
+      if (pos[i*3+1] > 4) pos[i*3+1] = 0;
+    }
+    geo.attributes.position.needsUpdate = true;
   });
 
   return <points ref={ref} geometry={geo} material={mat} />;
 }
 
-// ─── CÁMARA CONTROLADA POR SCROLL ─────────────────────────────────────────────
-interface CameraRigProps {
-  scrollRef: React.RefObject<number>;
+// ─── LUCES ────────────────────────────────────────────────────────────────────
+function Lights() {
+  const lilacRef = useRef<THREE.PointLight>(null);
+  const pinkRef  = useRef<THREE.PointLight>(null);
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    if (lilacRef.current) lilacRef.current.intensity = 1.2 + Math.sin(t * 0.7) * 0.3;
+    if (pinkRef.current)  pinkRef.current.intensity  = 0.8 + Math.sin(t * 0.5 + 1) * 0.2;
+  });
+  return (
+    <>
+      <ambientLight intensity={0.15} color="#1a0a2e" />
+      <directionalLight position={[5, 12, 5]} intensity={0.4} color="#fff8e8" castShadow />
+      <pointLight ref={lilacRef} position={[0, 5, 3]}  intensity={1.2} color="#b48ee8" distance={20} />
+      <pointLight ref={pinkRef}  position={[-4, 4, 2]} intensity={0.8} color="#f0a8c8" distance={16} />
+      <pointLight position={[0, 10, -10]} intensity={0.4} color="#f5d98a" distance={28} />
+      {/* Luz de suelo para el reflejo */}
+      <pointLight position={[0, 0.5, 0]} intensity={0.3} color="#b48ee8" distance={8} />
+    </>
+  );
 }
 
-function CameraRig({ scrollRef }: CameraRigProps) {
-  const { camera } = useThree();
-  const targetPos = useRef(new THREE.Vector3(0, 0, 8));
-  const targetLook = useRef(new THREE.Vector3(0, 0, 0));
-  const currentLook = useRef(new THREE.Vector3(0, 0, 0));
+// ─── CÁMARA CINEMATOGRÁFICA ───────────────────────────────────────────────────
+const CAM_WAYPOINTS = [
+  { pos: [0,  2.5, 9],   look: [0, 1.2, 0]  },  // 0 intro
+  { pos: [0,  3.5, 8],   look: [0, 2,  -2]  },  // 1 awakening — cielo
+  { pos: [-1.5, 1.8, 7], look: [0, 1.2, 0]  },  // 2 origin — lateral
+  { pos: [2,   1.5, 6],  look: [0, 1.2, -1] },  // 3 formation — bosque
+  { pos: [0,   1.2, 4.5],look: [0, 1.5, 0]  },  // 4 heartbeat — zoom
+  { pos: [-1,  1.8, 5],  look: [0, 1.5, 0]  },  // 5 letter1
+  { pos: [1,   1.8, 5],  look: [0, 1.5, 0]  },  // 6 letter2
+  { pos: [0,   0.4, 6],  look: [0, 1.0, -1] },  // 7 letter3 — suelo
+  { pos: [0,   5,   8],  look: [0, 1.5, -3] },  // 8 letter4 — elevada
+  { pos: [0,   2,  11],  look: [0, 1.2, 0]  },  // 9 final — zoom out
+];
 
-  // Waypoints de cámara por sección (0..1)
-  const waypoints = useMemo(() => [
-    { t: 0.00, pos: [0, 0, 8],   look: [0, 0, 0] },
-    { t: 0.12, pos: [0, 0, 6],   look: [0, 0, 0] },
-    { t: 0.22, pos: [-1, 1, 5],  look: [0, 0, -2] },
-    { t: 0.35, pos: [0, 0, 4],   look: [0, 0, -4] },
-    { t: 0.48, pos: [1, -0.5, 3],look: [0, 0, -2] },
-    { t: 0.60, pos: [0, 0.5, 5], look: [0, 0.5, 0] },
-    { t: 0.72, pos: [-1, 0, 6],  look: [0, 0, 0] },
-    { t: 0.84, pos: [0, 0, 5],   look: [0, 0, 0] },
-    { t: 1.00, pos: [0, 0, 7],   look: [0, 0, 0] },
-  ], []);
+function CameraRig({ scrollRef }: { scrollRef: React.RefObject<number> }) {
+  const { camera } = useThree();
+  const curPos  = useRef(new THREE.Vector3(0, 2.5, 9));
+  const curLook = useRef(new THREE.Vector3(0, 1.2, 0));
+  const tgtPos  = useRef(new THREE.Vector3(0, 2.5, 9));
+  const tgtLook = useRef(new THREE.Vector3(0, 1.2, 0));
 
   useFrame(() => {
-    const s = Math.max(0, Math.min(1, scrollRef.current ?? 0));
+    const s     = Math.max(0, Math.min(0.9999, scrollRef.current ?? 0));
+    const total = CAM_WAYPOINTS.length - 1;
+    const idx   = Math.floor(s * total);
+    const local = s * total - idx;
+    const ease  = local < 0.5 ? 2*local*local : -1+(4-2*local)*local;
+    const a = CAM_WAYPOINTS[idx];
+    const b = CAM_WAYPOINTS[Math.min(idx + 1, total)];
 
-    // Encontrar segmento
-    let a = waypoints[0], b = waypoints[1];
-    for (let i = 0; i < waypoints.length - 1; i++) {
-      if (s >= waypoints[i].t && s <= waypoints[i+1].t) {
-        a = waypoints[i]; b = waypoints[i+1]; break;
-      }
-    }
-    const seg = b.t - a.t;
-    const local = seg > 0 ? (s - a.t) / seg : 0;
-    const ease = local < 0.5 ? 2*local*local : -1+(4-2*local)*local;
-
-    targetPos.current.set(
+    tgtPos.current.set(
       a.pos[0] + (b.pos[0] - a.pos[0]) * ease,
       a.pos[1] + (b.pos[1] - a.pos[1]) * ease,
       a.pos[2] + (b.pos[2] - a.pos[2]) * ease,
     );
-    targetLook.current.set(
+    tgtLook.current.set(
       a.look[0] + (b.look[0] - a.look[0]) * ease,
       a.look[1] + (b.look[1] - a.look[1]) * ease,
       a.look[2] + (b.look[2] - a.look[2]) * ease,
     );
 
-    // Suavizado de cámara
-    camera.position.lerp(targetPos.current, 0.06);
-    currentLook.current.lerp(targetLook.current, 0.06);
-    camera.lookAt(currentLook.current);
+    curPos.current.lerp(tgtPos.current, 0.055);
+    curLook.current.lerp(tgtLook.current, 0.055);
+    camera.position.copy(curPos.current);
+    camera.lookAt(curLook.current);
   });
 
   return null;
 }
 
-// ─── LUCES ────────────────────────────────────────────────────────────────────
-function Lights() {
-  const pinkRef = useRef<THREE.PointLight>(null);
-  useFrame(({ clock }) => {
-    if (pinkRef.current) {
-      pinkRef.current.intensity = 0.4 + Math.sin(clock.elapsedTime * 0.7) * 0.15;
-    }
-  });
-  return (
-    <>
-      <ambientLight intensity={0.08} color="#1a0a2e" />
-      <pointLight position={[0, 5, 3]} intensity={0.5} color="#b48ee8" distance={20} />
-      <pointLight ref={pinkRef} position={[-5, 3, 2]} intensity={0.4} color="#f0a8c8" distance={15} />
-      <pointLight position={[0, 8, -10]} intensity={0.3} color="#f5d98a" distance={25} />
-    </>
-  );
-}
-
-// ─── ESCENA PRINCIPAL ─────────────────────────────────────────────────────────
-interface WorldProps {
+// ─── ESCENA ───────────────────────────────────────────────────────────────────
+interface SceneProps {
   scrollRef: React.RefObject<number>;
-  heartVisible: boolean;
+  section: number;
 }
 
-function WorldScene({ scrollRef, heartVisible }: WorldProps) {
+function Scene({ scrollRef, section }: SceneProps) {
   return (
     <>
       <Lights />
       <CameraRig scrollRef={scrollRef} />
-      <Stars />
-      <AnimeMoon />
-      <AnimeMountains />
-      <ToriiGate />
-      <NebulaParticles />
+
+      {/* Fondo */}
+      <DreiStars radius={80} depth={50} count={3000} factor={4} saturation={0.5} fade speed={0.5} />
+      <Moon />
+      <Mountains />
+      <Forest />
+
+      {/* Suelo */}
+      <Ground />
+
+      {/* Efectos */}
       <SakuraPetals />
-      <Heart3D visible={heartVisible} />
+      <MagicParticles active={section >= 4} />
+
+      {/* Personaje */}
+      <Suspense fallback={null}>
+        <Robot section={section} position={[0, 0, 0]} scale={1.0} />
+      </Suspense>
+
+      {/* Luz de relleno para el personaje */}
+      <pointLight position={[0, 3, 2]} intensity={0.6} color="#ffffff" distance={6} />
     </>
   );
 }
 
-// ─── CANVAS EXPORT ────────────────────────────────────────────────────────────
+// ─── EXPORT ───────────────────────────────────────────────────────────────────
 interface World3DProps {
   scrollRef: React.RefObject<number>;
-  heartVisible: boolean;
+  section: number;
 }
 
-export default function World3D({ scrollRef, heartVisible }: World3DProps) {
+export default function World3D({ scrollRef, section }: World3DProps) {
   return (
     <Canvas
-      id="world-canvas"
-      camera={{ position: [0, 0, 8], fov: 60, near: 0.1, far: 100 }}
+      camera={{ position: [0, 2.5, 9], fov: 55, near: 0.1, far: 150 }}
       gl={{
         antialias: false,
         alpha: false,
         powerPreference: "high-performance",
         toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.0,
+        toneMappingExposure: 1.1,
       }}
       dpr={[1, 1.5]}
+      shadows={false}
       frameloop="always"
       performance={{ min: 0.5 }}
     >
       <color attach="background" args={["#03010f"]} />
       <fog attach="fog" args={["#03010f", 30, 80]} />
-      <WorldScene scrollRef={scrollRef} heartVisible={heartVisible} />
+      <Scene scrollRef={scrollRef} section={section} />
       <EffectComposer multisampling={0}>
         <Bloom
-          intensity={1.4}
-          luminanceThreshold={0.12}
+          intensity={1.3}
+          luminanceThreshold={0.15}
           luminanceSmoothing={0.9}
           mipmapBlur
-          radius={0.55}
+          radius={0.5}
         />
-        <Vignette offset={0.25} darkness={0.7} eskil={false} />
+        <Vignette offset={0.2} darkness={0.6} eskil={false} />
       </EffectComposer>
     </Canvas>
   );
 }
+
+// Preload
+useGLTF.preload("/models/robot.glb");
