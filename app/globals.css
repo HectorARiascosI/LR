@@ -209,3 +209,42 @@ html.lenis { height: auto; }
   border-color: rgba(180,142,232,0.6);
   color: #d4b8ff;
 }
+
+/* ── CONTADOR VIVO ── */
+.live-counter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0.8rem 0;
+}
+.counter-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+.counter-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2rem, 6vw, 3.8rem);
+  font-weight: 300;
+  line-height: 1;
+  color: #f5d98a;
+  text-shadow: 0 0 20px rgba(245,217,138,0.8), 0 0 40px rgba(245,217,138,0.4);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.counter-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.52rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(245,217,138,0.45);
+}
+.counter-sep {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1.5rem, 4vw, 2.8rem);
+  color: rgba(245,217,138,0.3);
+  line-height: 1;
+  margin-bottom: 1rem;
+}

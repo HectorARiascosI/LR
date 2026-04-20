@@ -1,21 +1,19 @@
 "use client";
-/**
- * SceneCanvas — Canvas principal
- * ShaderBackground (nebulosa GLSL) + ParticleMorph (4000 partículas GPU)
- */
 import { Canvas } from "@react-three/fiber";
 import { Bloom, EffectComposer, Vignette, ChromaticAberration } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
 import * as THREE from "three";
+import { Vector2 } from "three";
 import ShaderBackground from "./ShaderBackground";
 import ParticleMorph from "./ParticleMorph";
-import { Vector2 } from "three";
+import NeonBouquet from "./NeonBouquet";
 
 interface SceneCanvasProps {
   scrollProgress: React.RefObject<number>;
+  showBouquet: boolean;
 }
 
-export default function SceneCanvas({ scrollProgress }: SceneCanvasProps) {
+export default function SceneCanvas({ scrollProgress, showBouquet }: SceneCanvasProps) {
   return (
     <Canvas
       camera={{ position: [0, 0, 6], fov: 60, near: 0.1, far: 100 }}
@@ -32,18 +30,19 @@ export default function SceneCanvas({ scrollProgress }: SceneCanvasProps) {
     >
       <ShaderBackground />
       <ParticleMorph scrollProgress={scrollProgress} />
+      <NeonBouquet visible={showBouquet} />
 
       <EffectComposer multisampling={0}>
         <Bloom
-          intensity={2.2}
-          luminanceThreshold={0.05}
+          intensity={2.4}
+          luminanceThreshold={0.04}
           luminanceSmoothing={0.85}
           mipmapBlur
-          radius={0.7}
+          radius={0.75}
         />
         <ChromaticAberration
           blendFunction={BlendFunction.NORMAL}
-          offset={new Vector2(0.0008, 0.0008)}
+          offset={new Vector2(0.0007, 0.0007)}
           radialModulation={false}
           modulationOffset={0}
         />
