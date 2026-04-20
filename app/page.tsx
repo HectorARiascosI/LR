@@ -137,7 +137,7 @@ const SECTIONS = [
     <FadeIn delay={0.4}>
       <div style={{ display:"flex", gap:"1rem", justifyContent:"center", flexWrap:"wrap" }}>
         <PhotoCard src="/photos/leyre-manos.jpg" alt="Leyre" caption="Esa pose. Esos labios. Ese pelo. Dios mío." glowColor="#ff4da6" size="md" delay={0.1} />
-        <PhotoCard src="/photos/leyre-gorra.jpg" alt="Leyre con gorra" caption="Con gorra y todo sigues siendo la más bonita del lugar." glowColor="#d4b8ff" size="md" delay={0.3} />
+        <PhotoCard src="/photos/leyre-gorra.jpg" alt="Leyre con gorra" caption="Nuestras manitos :3 " glowColor="#d4b8ff" size="md" delay={0.3} />
       </div>
     </FadeIn>
     <FadeIn delay={0.7}><p className="t-body" style={{ marginTop:"1.2rem" }}>
@@ -153,7 +153,7 @@ const SECTIONS = [
     <FadeIn delay={0.15}>
       <div style={{ display:"flex", gap:"1rem", justifyContent:"center", flexWrap:"wrap" }}>
         <PhotoCard src="/photos/leyre-rizado.jpg" alt="Leyre pelo rizado" caption="Tu pelo rizado suelto es una de mis cosas favoritas." glowColor="#ffb8d4" size="lg" delay={0.1} />
-        <PhotoCard src="/photos/leyre-musculo.jpg" alt="Leyre fuerte" caption="Esa foto de perfil con esa luz... no sé si eras consciente. Yo sí lo noté." glowColor="#ff7733" size="lg" delay={0.3} />
+        <PhotoCard src="/photos/leyre-musculo.jpg" alt="Leyre fuerte" caption="Y como siempre, muy guapa y muy fuerte!!!" glowColor="#ff7733" size="lg" delay={0.3} />
       </div>
     </FadeIn>
     <FadeIn delay={0.6}><p className="t-verse c-pink glow-pink" style={{ marginTop:"1.4rem" }}>
