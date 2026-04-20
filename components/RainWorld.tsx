@@ -288,12 +288,12 @@ function MoonAndClouds() {
         <primitive object={moonMat} />
       </mesh>
       {/* Nubes pasando */}
-      <mesh ref={cloud1} position={[-2, 0.5, 0.1]}>
-        <ellipseGeometry args={[3.5, 1.2, 8]} />
+      <mesh ref={cloud1} position={[-2, 0.5, 0.1]} scale={[3.5, 1.2, 1]}>
+        <circleGeometry args={[1, 16]} />
         <primitive object={cloudMat} />
       </mesh>
-      <mesh ref={cloud2} position={[3, -0.3, 0.1]}>
-        <ellipseGeometry args={[2.8, 1.0, 8]} />
+      <mesh ref={cloud2} position={[3, -0.3, 0.1]} scale={[2.8, 1.0, 1]}>
+        <circleGeometry args={[1, 16]} />
         <primitive object={cloudMat} />
       </mesh>
     </group>
