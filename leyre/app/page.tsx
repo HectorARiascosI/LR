@@ -1,245 +1,457 @@
 "use client";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { useEffect, useState, useRef } from "react";
-import NarrativeText from "@/components/NarrativeText";
-import TransitionController from "@/components/TransitionController";
-import { useAnimationPhase } from "@/hooks/useAnimationPhase";
-import type { Phase } from "@/hooks/useAnimationPhase";
+import { motion, useInView } from "framer-motion";
 
-const Scene3D = dynamic(() => import("@/components/Scene3D"), {
+const World3D = dynamic(() => import("@/components/World3D"), {
   ssr: false,
   loading: () => null,
 });
 
-/* Gradientes por fase */
-const BG: Record<Phase, string> = {
-  void:      "radial-gradient(ellipse 80% 60% at 50% 50%, #0d0520 0%, #03020a 100%)",
-  awakening: "radial-gradient(ellipse 100% 70% at 35% 55%, #160830 0%, #03020a 70%)",
-  origin:    "radial-gradient(ellipse 90% 60% at 50% 40%, #0e0525 0%, #03020a 65%), radial-gradient(ellipse 40% 40% at 70% 70%, #1a0830 0%, transparent 60%)",
-  formation: "radial-gradient(ellipse 110% 80% at 50% 50%, #0d1a10 0%, #03020a 60%)",
-  heartbeat: "radial-gradient(ellipse 80% 80% at 50% 50%, #220d40 0%, #03020a 55%)",
-  letter_1:  "radial-gradient(ellipse 100% 70% at 50% 50%, #180a30 0%, #03020a 60%), radial-gradient(ellipse 50% 50% at 80% 20%, #2a0a20 0%, transparent 50%)",
-  letter_2:  "radial-gradient(ellipse 100% 70% at 50% 50%, #1a0830 0%, #03020a 60%), radial-gradient(ellipse 40% 40% at 20% 80%, #200a28 0%, transparent 50%)",
-  letter_3:  "radial-gradient(ellipse 100% 70% at 50% 50%, #0d1a10 0%, #03020a 60%), radial-gradient(ellipse 50% 50% at 75% 75%, #1a2a10 0%, transparent 50%)",
-  letter_4:  "radial-gradient(ellipse 100% 70% at 50% 50%, #1e1008 0%, #03020a 60%), radial-gradient(ellipse 40% 40% at 25% 25%, #2a1a08 0%, transparent 50%)",
-  final:     "radial-gradient(ellipse 90% 90% at 50% 50%, #220d40 0%, #03020a 50%), radial-gradient(ellipse 60% 60% at 50% 50%, #1a0830 0%, transparent 70%)",
-};
+// ─── FADE IN WRAPPER ──────────────────────────────────────────────────────────
+function FadeIn({ children, delay = 0, className = "" }: {
+  children: React.ReactNode; delay?: number; className?: string;
+}) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-15%" });
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 40 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 1.2, delay, ease: [0.16, 1, 0.3, 1] }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
-/* Textos que flotan desde las hojas de los árboles */
-const LEAF_TEXTS: Partial<Record<Phase, string[]>> = {
-  formation: ["te vi", "y algo cambió", "sin avisar"],
-  heartbeat: ["latido", "tuyo", "mío", "nuestro"],
-  letter_1:  ["inteligente", "genuina", "especial", "única"],
-  letter_2:  ["te siento", "cerca", "mi calma", "mi luz"],
-  letter_3:  ["tu piel", "tu ser", "tu esencia", "te quiero"],
-  letter_4:  ["Dios lo sabe", "fe", "futuro", "contigo"],
-  final:     ["gracias", "Leyre", "siempre", "✦"],
-};
+// ─── SECCIONES DE CONTENIDO ───────────────────────────────────────────────────
+const sections = [
+  // 0 — VOID / INTRO
+  null,
 
-function LeafTextParticles({ phase }: { phase: Phase }) {
-  const [particles, setParticles] = useState<{ id: number; text: string; x: number; y: number }[]>([]);
-  const counterRef = useRef(0);
-  const texts = LEAF_TEXTS[phase];
+  // 1 — AWAKENING
+  <div key="awakening" className="text-block">
+    <FadeIn>
+      <p className="t-caption c-dim" style={{ marginBottom: "1rem" }}>
+        ✦ &nbsp; para leyre &nbsp; ✦
+      </p>
+    </FadeIn>
+    <FadeIn delay={0.3}>
+      <h1 className="t-hero text-shimmer" style={{ marginBottom: "1.5rem" }}>
+        Leyre
+      </h1>
+    </FadeIn>
+    <FadeIn delay={0.6}>
+      <p className="t-body c-dim">
+        Hay momentos que Dios prepara<br />
+        mucho antes de que los veas venir.
+      </p>
+    </FadeIn>
+    <FadeIn delay={0.9}>
+      <p className="t-jp c-dim" style={{ marginTop: "1.5rem" }}>
+        運命 — destino
+      </p>
+    </FadeIn>
+  </div>,
 
+  // 2 — ORIGIN (chat)
+  <div key="origin" className="text-block">
+    <FadeIn>
+      <p className="t-caption c-lilac" style={{ marginBottom: "2rem" }}>
+        17 de marzo · 6:01 am
+      </p>
+    </FadeIn>
+    <FadeIn delay={0.2}>
+      <p className="t-title c-dim" style={{ marginBottom: "2rem" }}>
+        Mientras el mundo dormía,<br />
+        <span className="c-white">Dios movió algo.</span>
+      </p>
+    </FadeIn>
+    <FadeIn delay={0.5}>
+      <div className="bubble-wrap" style={{ margin: "0 auto" }}>
+        <div className="bubble bubble-sent">
+          Holaap
+          <div className="bubble-time">6:01 am</div>
+        </div>
+        <div className="bubble bubble-recv">
+          Holaaaa 😊
+          <div className="bubble-time">6:02 am</div>
+        </div>
+        <div className="bubble bubble-sent">¿Cómo estás?</div>
+        <div className="bubble bubble-recv">
+          Con sueño 😴
+          <div className="bubble-time">6:03 am</div>
+        </div>
+      </div>
+    </FadeIn>
+    <FadeIn delay={1.0}>
+      <p className="t-verse c-dim" style={{ marginTop: "2rem" }}>
+        Con sueño a las 6am.<br />
+        Y aun así respondiste.
+      </p>
+    </FadeIn>
+  </div>,
+
+  // 3 — FORMATION
+  <div key="formation" className="text-block">
+    <FadeIn>
+      <p className="t-caption c-sakura" style={{ marginBottom: "1.5rem" }}>
+        花 — flor
+      </p>
+    </FadeIn>
+    <FadeIn delay={0.3}>
+      <h2 className="t-title c-white glow-white" style={{ marginBottom: "1.5rem" }}>
+        Hay personas que Dios pone<br />
+        en tu camino y sin hacer ruido,
+      </h2>
+    </FadeIn>
+    <FadeIn delay={0.6}>
+      <p className="t-hero c-lilac glow-lilac">
+        lo reorganizan todo.
+      </p>
+    </FadeIn>
+    <FadeIn delay={0.9}>
+      <p className="t-body c-dim" style={{ marginTop: "2rem" }}>
+        Como Merlin ante Escanor —<br />
+        una presencia que lo cambia todo<br />
+        sin siquiera intentarlo.
+      </p>
+    </FadeIn>
+  </div>,
+
+  // 4 — HEARTBEAT
+  <div key="heartbeat" className="text-block">
+    <FadeIn>
+      <p className="t-hero text-shimmer">Un mes.</p>
+    </FadeIn>
+    <FadeIn delay={0.4}>
+      <div className="divider" />
+    </FadeIn>
+    <FadeIn delay={0.6}>
+      <p className="t-title c-dim">
+        Treinta días que cambiaron<br />
+        la forma en que veo las mañanas.
+      </p>
+    </FadeIn>
+    <FadeIn delay={1.0}>
+      <p className="t-body c-dim" style={{ marginTop: "1.5rem" }}>
+        Treinta días en los que<br />
+        mi corazón aprendió tu nombre.
+      </p>
+    </FadeIn>
+  </div>,
+
+  // 5 — LETTER 1: quién eres
+  <div key="letter1" className="text-block">
+    <FadeIn>
+      <p className="t-caption c-lilac" style={{ marginBottom: "1.5rem" }}>
+        sobre ti
+      </p>
+    </FadeIn>
+    <FadeIn delay={0.2}>
+      <h2 className="t-title c-white glow-white" style={{ marginBottom: "1.5rem" }}>
+        Eres espectacular, Leyre.
+      </h2>
+    </FadeIn>
+    <FadeIn delay={0.5}>
+      <p className="t-body c-dim">
+        No lo digo porque sí.<br />
+        Lo digo porque lo veo.
+      </p>
+    </FadeIn>
+    <FadeIn delay={0.8}>
+      <div className="divider" />
+    </FadeIn>
+    <FadeIn delay={1.0}>
+      <p className="t-body c-dim">
+        Eres de las personas que piensan<br />
+        antes de hablar. Que cuidan lo que dicen<br />
+        porque saben que las palabras pesan.
+      </p>
+    </FadeIn>
+    <FadeIn delay={1.4}>
+      <p className="t-verse c-lilac glow-lilac" style={{ marginTop: "1.5rem" }}>
+        Eso es raro. Y es tuyo.
+      </p>
+    </FadeIn>
+    <FadeIn delay={1.8}>
+      <p className="t-body c-dim" style={{ marginTop: "1.5rem" }}>
+        Tu inteligencia no es la que presume.<br />
+        Es la que resuelve, la que escucha,<br />
+        la que entiende sin que le expliquen dos veces.
+      </p>
+    </FadeIn>
+  </div>,
+
+  // 6 — LETTER 2: lo que siento
+  <div key="letter2" className="text-block">
+    <FadeIn>
+      <p className="t-caption c-pink" style={{ marginBottom: "1.5rem" }}>
+        lo que me haces sentir
+      </p>
+    </FadeIn>
+    <FadeIn delay={0.3}>
+      <h2 className="t-title c-pink glow-pink" style={{ marginBottom: "1.5rem" }}>
+        Se me acelera el corazón<br />
+        cada vez que sé que te voy a ver.
+      </h2>
+    </FadeIn>
+    <FadeIn delay={0.7}>
+      <p className="t-body c-dim">
+        Cuando estás cerca,<br />
+        hay algo en el aire que cambia.
+      </p>
+    </FadeIn>
+    <FadeIn delay={1.0}>
+      <div className="divider" />
+    </FadeIn>
+    <FadeIn delay={1.2}>
+      <p className="t-verse c-gold glow-gold">
+        Como Escanor al sol —<br />
+        tu presencia me hace brillar<br />
+        más de lo que creía posible.
+      </p>
+    </FadeIn>
+    <FadeIn delay={1.6}>
+      <p className="t-body c-dim" style={{ marginTop: "1.5rem" }}>
+        Contigo no tengo que calcular lo que digo.<br />
+        Simplemente soy.
+      </p>
+    </FadeIn>
+  </div>,
+
+  // 7 — LETTER 3: lo que me das
+  <div key="letter3" className="text-block">
+    <FadeIn>
+      <p className="t-caption c-sakura" style={{ marginBottom: "1.5rem" }}>
+        lo que me das
+      </p>
+    </FadeIn>
+    <FadeIn delay={0.2}>
+      <h2 className="t-title c-white" style={{ marginBottom: "1.5rem" }}>
+        Me encanta tu color de piel.
+      </h2>
+    </FadeIn>
+    <FadeIn delay={0.5}>
+      <p className="t-body c-dim">
+        Me encanta tu forma tan sencilla<br />
+        y genuina de ser.
+      </p>
+    </FadeIn>
+    <FadeIn delay={0.8}>
+      <p className="t-body c-dim" style={{ marginTop: "1rem" }}>
+        Tu pensamiento. Tus decisiones.<br />
+        Cómo ves el mundo.
+      </p>
+    </FadeIn>
+    <FadeIn delay={1.1}>
+      <p className="t-verse c-lilac glow-lilac" style={{ marginTop: "1.5rem" }}>
+        Me encanta sentir tu presencia.
+      </p>
+    </FadeIn>
+    <FadeIn delay={1.4}>
+      <p className="t-body c-dim" style={{ marginTop: "1.5rem" }}>
+        Tu bondad es silenciosa.<br />
+        No la anuncias. No la usas.<br />
+        Simplemente la tienes.
+      </p>
+    </FadeIn>
+  </div>,
+
+  // 8 — LETTER 4: fe y futuro
+  <div key="letter4" className="text-block">
+    <FadeIn>
+      <p className="t-caption c-gold" style={{ marginBottom: "1.5rem" }}>
+        fe y futuro
+      </p>
+    </FadeIn>
+    <FadeIn delay={0.3}>
+      <h2 className="t-title c-gold glow-gold" style={{ marginBottom: "1.5rem" }}>
+        Dios sabe lo que hace.
+      </h2>
+    </FadeIn>
+    <FadeIn delay={0.6}>
+      <p className="t-body c-dim">
+        Y creo que esto — lo que hay entre tú y yo —<br />
+        no es casualidad.
+      </p>
+    </FadeIn>
+    <FadeIn delay={1.0}>
+      <div className="divider" />
+    </FadeIn>
+    <FadeIn delay={1.2}>
+      <p className="t-title c-white glow-white" style={{ marginTop: "0.5rem" }}>
+        Eres la mujer con la que<br />
+        quiero tener mis hijos algún día.
+      </p>
+    </FadeIn>
+    <FadeIn delay={1.6}>
+      <p className="t-body c-dim" style={{ marginTop: "1.5rem" }}>
+        Lo digo con el corazón. Sin miedo.<br />
+        Contigo no tengo miedo.
+      </p>
+    </FadeIn>
+    <FadeIn delay={2.0}>
+      <p className="t-verse c-gold glow-gold" style={{ marginTop: "1.5rem" }}>
+        «El amor es sufrido, es benigno;<br />
+        el amor no tiene envidia.»<br />
+        <span className="t-caption c-dim">— 1 Corintios 13:4</span>
+      </p>
+    </FadeIn>
+  </div>,
+
+  // 9 — FINAL
+  <div key="final" className="text-block">
+    <FadeIn>
+      <p className="t-caption c-dim" style={{ marginBottom: "1.5rem" }}>
+        ✦ &nbsp; un mes &nbsp; ✦
+      </p>
+    </FadeIn>
+    <FadeIn delay={0.3}>
+      <h1 className="t-hero text-shimmer" style={{ marginBottom: "1.5rem" }}>
+        Gracias,<br />Leyre.
+      </h1>
+    </FadeIn>
+    <FadeIn delay={0.7}>
+      <p className="t-body c-dim">
+        Por llegar con sueño y quedarte despierta.<br />
+        Por ser exactamente como eres.<br />
+        Por dejarme conocerte.
+      </p>
+    </FadeIn>
+    <FadeIn delay={1.1}>
+      <div className="divider" />
+    </FadeIn>
+    <FadeIn delay={1.4}>
+      <p className="t-verse c-pink glow-pink">
+        Esto apenas comienza.
+      </p>
+    </FadeIn>
+    <FadeIn delay={1.8}>
+      <p className="t-jp c-gold glow-gold" style={{ marginTop: "2rem", fontSize: "1.2rem" }}>
+        ✦ &nbsp; te quiero &nbsp; ✦
+      </p>
+    </FadeIn>
+  </div>,
+];
+
+// ─── CURSOR PERSONALIZADO ─────────────────────────────────────────────────────
+function CustomCursor() {
   useEffect(() => {
-    if (!texts) return;
-    const interval = setInterval(() => {
-      const text = texts[Math.floor(Math.random() * texts.length)];
-      const x = 5 + Math.random() * 90;
-      const y = 60 + Math.random() * 30;
-      const id = counterRef.current++;
-      setParticles((prev: { id: number; text: string; x: number; y: number }[]) => [...prev.slice(-8), { id, text, x, y }]);
-    }, 1800);
-    return () => clearInterval(interval);
-  }, [phase, texts]);
+    const dot  = document.getElementById("cursor-dot");
+    const ring = document.getElementById("cursor-ring");
+    if (!dot || !ring) return;
 
-  return (
-    <div className="fixed inset-0 z-5 pointer-events-none overflow-hidden">
-      <AnimatePresence>
-        {particles.map((p: { id: number; text: string; x: number; y: number }) => (
-          <motion.span
-            key={p.id}
-            initial={{ opacity: 0, y: 0, x: 0 }}
-            animate={{ opacity: [0, 0.9, 0.7, 0], y: -100, x: (Math.random() - 0.5) * 40 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 4.5, ease: "easeOut" }}
-            className="leaf-text"
-            style={{ left: `${p.x}%`, top: `${p.y}%` }}
-          >
-            {p.text}
-          </motion.span>
-        ))}
-      </AnimatePresence>
-    </div>
-  );
+    let mx = -100, my = -100, rx = -100, ry = -100;
+
+    const onMove = (e: MouseEvent) => { mx = e.clientX; my = e.clientY; };
+    window.addEventListener("mousemove", onMove);
+
+    let raf: number;
+    const tick = () => {
+      rx += (mx - rx) * 0.12;
+      ry += (my - ry) * 0.12;
+      dot.style.transform  = `translate(${mx - 3}px, ${my - 3}px)`;
+      ring.style.transform = `translate(${rx - 15}px, ${ry - 15}px)`;
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => { window.removeEventListener("mousemove", onMove); cancelAnimationFrame(raf); };
+  }, []);
+  return null;
 }
 
-/* Nebulosa de fondo */
-function NebulaOverlay({ phase }: { phase: Phase }) {
-  return (
-    <AnimatePresence>
-      {phase !== "void" && (
-        <motion.div
-          key="nebula"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 3 }}
-          className="fixed inset-0 z-0 pointer-events-none"
-          style={{
-            background: `
-              radial-gradient(ellipse 60% 40% at 20% 30%, rgba(180,142,232,0.04) 0%, transparent 60%),
-              radial-gradient(ellipse 50% 35% at 80% 70%, rgba(240,168,200,0.03) 0%, transparent 60%),
-              radial-gradient(ellipse 40% 30% at 60% 20%, rgba(245,217,138,0.02) 0%, transparent 50%)
-            `,
-          }}
-        />
-      )}
-    </AnimatePresence>
-  );
-}
-
-/* Pulso de latido */
-function HeartbeatGlow({ phase }: { phase: Phase }) {
-  const active = ["heartbeat","letter_1","letter_2","letter_3","letter_4","final"].includes(phase);
-  return (
-    <AnimatePresence>
-      {active && (
-        <motion.div
-          key="hb-glow"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: [0.05, 0.14, 0.05] }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 1.65, repeat: Infinity, ease: "easeInOut" }}
-          className="fixed inset-0 z-0 pointer-events-none"
-          style={{
-            background: "radial-gradient(ellipse 50% 50% at 50% 50%, rgba(180,142,232,0.16) 0%, rgba(240,168,200,0.05) 40%, transparent 70%)",
-          }}
-        />
-      )}
-    </AnimatePresence>
-  );
-}
-
-/* Brillo divino dorado */
-function DivineGlow({ phase }: { phase: Phase }) {
-  const active = ["letter_4","final","awakening"].includes(phase);
-  return (
-    <AnimatePresence>
-      {active && (
-        <motion.div
-          key="divine"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: [0.03, 0.09, 0.03] }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-          className="fixed inset-0 z-0 pointer-events-none"
-          style={{
-            background: "radial-gradient(ellipse 60% 40% at 50% 30%, rgba(245,217,138,0.15) 0%, transparent 70%)",
-          }}
-        />
-      )}
-    </AnimatePresence>
-  );
-}
-
-/* Flash de transición entre fases */
-function TransitionFlash({ phase }: { phase: Phase }) {
-  return (
-    <AnimatePresence>
-      <motion.div
-        key={phase + "-flash"}
-        initial={{ opacity: 0.18 }}
-        animate={{ opacity: 0 }}
-        transition={{ duration: 1.2, ease: "easeOut" }}
-        className="fixed inset-0 z-25 pointer-events-none"
-        style={{
-          background: "radial-gradient(ellipse 80% 80% at 50% 50%, rgba(212,184,255,0.12) 0%, transparent 70%)",
-        }}
-      />
-    </AnimatePresence>
-  );
-}
-
+// ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
 export default function Home() {
-  const { phase, nextPhase } = useAnimationPhase();
+  const scrollRef = useRef<number>(0);
+  const [heartVisible, setHeartVisible] = useState(false);
+  const [activeSection, setActiveSection] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Lenis smooth scroll
+  useEffect(() => {
+    let lenis: { raf: (t: number) => void; destroy: () => void } | null = null;
+
+    const init = async () => {
+      const { default: Lenis } = await import("lenis");
+      lenis = new Lenis({ lerp: 0.08, smoothWheel: true }) as unknown as { raf: (t: number) => void; destroy: () => void };
+
+      let raf: number;
+      const animate = (time: number) => {
+        lenis!.raf(time);
+        raf = requestAnimationFrame(animate);
+      };
+      raf = requestAnimationFrame(animate);
+
+      // Scroll progress
+      const onScroll = () => {
+        const el = document.documentElement;
+        const progress = el.scrollTop / (el.scrollHeight - el.clientHeight);
+        scrollRef.current = progress;
+
+        // Detectar sección activa
+        const total = sections.length;
+        const sec = Math.floor(progress * total);
+        setActiveSection(Math.min(sec, total - 1));
+
+        // Corazón visible en secciones 4-9
+        setHeartVisible(progress > 0.38);
+      };
+
+      window.addEventListener("scroll", onScroll, { passive: true });
+      return () => {
+        window.removeEventListener("scroll", onScroll);
+        cancelAnimationFrame(raf);
+      };
+    };
+
+    const cleanup = init();
+    return () => {
+      cleanup.then(fn => fn?.());
+      lenis?.destroy();
+    };
+  }, []);
 
   return (
-    <main className="relative w-full min-h-screen overflow-hidden select-none">
-
-      {/* Fondo base */}
-      <motion.div
-        className="fixed inset-0 z-0"
-        animate={{ background: BG[phase as Phase] }}
-        transition={{ duration: 2.5, ease: "easeInOut" }}
-      />
-
-      {/* Viñeta */}
-      <div
-        className="fixed inset-0 z-0 pointer-events-none"
-        style={{
-          background: "radial-gradient(ellipse 75% 75% at 50% 50%, transparent 30%, rgba(3,2,10,0.65) 70%, rgba(3,2,10,0.95) 100%)",
-        }}
-      />
-
-      <NebulaOverlay phase={phase} />
-      <HeartbeatGlow phase={phase} />
-      <DivineGlow phase={phase} />
-      <TransitionFlash phase={phase} />
-
-      {/* Escena 3D */}
-      <Scene3D phase={phase} />
-
-      {/* Hojas con texto */}
-      <LeafTextParticles phase={phase} />
-
-      {/* Texto narrativo — sin blur CSS (caro en compositor) */}
-      <div className="relative z-20">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={phase}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.9 }}
-          >
-            <NarrativeText phase={phase} />
-          </motion.div>
-        </AnimatePresence>
+    <>
+      {/* Canvas 3D fijo */}
+      <div style={{ position: "fixed", inset: 0, zIndex: 0 }}>
+        <World3D scrollRef={scrollRef as React.RefObject<number>} heartVisible={heartVisible} />
       </div>
 
-      <TransitionController phase={phase} onNext={nextPhase} />
+      {/* Cursor */}
+      <div id="cursor-dot" />
+      <div id="cursor-ring" />
+      <CustomCursor />
 
-      {/* Marca discreta */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.3 }}
-        transition={{ delay: 4, duration: 2 }}
-        className="fixed top-6 left-7 z-30 pointer-events-none"
-      >
-        <span className="font-body text-[0.6rem] tracking-[0.45em] uppercase" style={{ color: "#7a5aaa" }}>
-          para leyre
-        </span>
-      </motion.div>
+      {/* Label */}
+      <div id="site-label">para leyre · 2026</div>
 
-      {/* Fecha — solo en origin */}
-      <AnimatePresence>
-        {phase === "origin" && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.25 }}
-            exit={{ opacity: 0 }}
-            transition={{ delay: 0.5, duration: 1.5 }}
-            className="fixed top-6 right-7 z-30 pointer-events-none"
+      {/* Progress dots */}
+      <div id="progress-bar">
+        {sections.map((_, i) => (
+          <div
+            key={i}
+            className={`progress-dot${activeSection === i ? " active" : ""}`}
+          />
+        ))}
+      </div>
+
+      {/* Scroll container — cada sección es 100vh */}
+      <div ref={containerRef} id="scroll-root">
+        {sections.map((content, i) => (
+          <section
+            key={i}
+            className="scene-section"
+            style={{ minHeight: i === 0 ? "100vh" : "120vh" }}
           >
-            <span className="font-body text-[0.6rem] tracking-[0.3em] uppercase" style={{ color: "#b48ee8" }}>
-              17 · 03 · 2026
-            </span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-    </main>
+            {content}
+          </section>
+        ))}
+      </div>
+    </>
   );
 }
