@@ -188,3 +188,99 @@ html, body {
   font-style: italic;
   user-select: none;
 }
+
+/* ── GOLD GLOW ── */
+.glow-gold {
+  text-shadow:
+    0 0 20px rgba(245, 217, 138, 0.9),
+    0 0 40px rgba(245, 217, 138, 0.5),
+    0 0 80px rgba(245, 217, 138, 0.25),
+    0 2px 30px rgba(3, 2, 10, 0.95);
+}
+
+/* ── FOREST GLOW ── */
+.glow-forest {
+  text-shadow:
+    0 0 20px rgba(126, 203, 138, 0.8),
+    0 0 40px rgba(126, 203, 138, 0.4),
+    0 2px 30px rgba(3, 2, 10, 0.95);
+}
+
+/* ── ANIME LEAF TEXT — partículas de texto flotantes ── */
+@keyframes leafFloat {
+  0%   { transform: translateY(0px) rotate(0deg); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 0.8; }
+  100% { transform: translateY(-120px) rotate(15deg); opacity: 0; }
+}
+.leaf-text {
+  animation: leafFloat 4s ease-in-out forwards;
+  position: absolute;
+  pointer-events: none;
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 0.75rem;
+  color: rgba(126, 203, 138, 0.85);
+  text-shadow: 0 0 12px rgba(126, 203, 138, 0.6);
+  white-space: nowrap;
+}
+
+/* ── SHIMMER GOLD ── */
+@keyframes shimmerGold {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.text-shimmer-gold {
+  background: linear-gradient(
+    90deg,
+    #f5d98a 0%,
+    #ffe8a0 25%,
+    #f0a8c8 50%,
+    #ffe8a0 75%,
+    #f5d98a 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmerGold 4s linear infinite;
+}
+
+/* ── ANIME CROSS / DIVINE GLOW ── */
+@keyframes divineGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(245,217,138,0.3), 0 0 60px rgba(245,217,138,0.1); }
+  50%       { box-shadow: 0 0 40px rgba(245,217,138,0.6), 0 0 100px rgba(245,217,138,0.2); }
+}
+.divine-card {
+  animation: divineGlow 3s ease-in-out infinite;
+  border: 1px solid rgba(245, 217, 138, 0.25);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(245,217,138,0.06), rgba(3,2,10,0.8));
+  backdrop-filter: blur(20px);
+}
+
+/* ── HEARTBEAT PULSE ── */
+@keyframes heartPulse {
+  0%, 100% { transform: scale(1); }
+  14%       { transform: scale(1.08); }
+  28%       { transform: scale(1); }
+  42%       { transform: scale(1.05); }
+  70%       { transform: scale(1); }
+}
+.heart-pulse {
+  animation: heartPulse 1.4s ease-in-out infinite;
+  display: inline-block;
+}
+
+/* ── ANIME SPEED LINES ── */
+@keyframes speedLine {
+  0%   { transform: scaleX(0); opacity: 0.6; }
+  100% { transform: scaleX(1); opacity: 0; }
+}
+.speed-line {
+  animation: speedLine 0.8s ease-out forwards;
+  transform-origin: left center;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212,184,255,0.6), transparent);
+}
+
