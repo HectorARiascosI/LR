@@ -2,216 +2,189 @@
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { generateHeartPoints, generateRandomPoints, lerpPositions } from "@/lib/heartGeometry";
+import { generateHeartPoints, generateRandomPoints } from "@/lib/heartGeometry";
 import type { Phase } from "@/hooks/useAnimationPhase";
 
-const PARTICLE_COUNT = 5000;
+// Menos partículas, más calidad visual por shader
+const PARTICLE_COUNT = 2000;
 
-// Fases donde el corazón debe estar formado
-const HEART_PHASES: Phase[] = ["formation", "heartbeat", "letter_1", "letter_2", "letter_3", "letter_4", "final"];
-// Fases donde las partículas están en modo "awakening" (reactivas al cursor)
-const AWAKE_PHASES: Phase[] = ["awakening", "origin"];
+const HEART_PHASES: Phase[] = ["formation","heartbeat","letter_1","letter_2","letter_3","letter_4","final"];
+const AWAKE_PHASES: Phase[] = ["awakening","origin"];
 
 interface Props {
   phase: Phase;
-  mouseRef: { current: { x: number; y: number } };
+  mouseRef: { current: { x: number; y: number } | null };
 }
 
 export default function ParticleSystem({ phase, mouseRef }: Props) {
-  const meshRef = useRef<THREE.Points<THREE.BufferGeometry, THREE.Material>>(null);
+  const meshRef = useRef<THREE.Points>(null);
   const progressRef = useRef(0);
   const timeRef = useRef(0);
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
 
-  const { randomPositions, heartPositions, currentPositions, colors, sizes } = useMemo(() => {
-    const random = generateRandomPoints(PARTICLE_COUNT, 12);
-    const heart  = generateHeartPoints(PARTICLE_COUNT);
-    const current = new Float32Array(random);
-
-    // Colores: lila dominante, rosa acento, plata highlight
+  // Posiciones base pre-calculadas — nunca se recrean
+  const { randomPos, heartPos, colors, sizes, seeds } = useMemo(() => {
+    const rnd = generateRandomPoints(PARTICLE_COUNT, 10);
+    const hrt = generateHeartPoints(PARTICLE_COUNT);
     const cols = new Float32Array(PARTICLE_COUNT * 3);
-    // Tamaños variables para profundidad
     const szs  = new Float32Array(PARTICLE_COUNT);
+    const sds  = new Float32Array(PARTICLE_COUNT); // semillas aleatorias por partícula
 
     for (let i = 0; i < PARTICLE_COUNT; i++) {
       const r = Math.random();
-      const brightness = 0.7 + Math.random() * 0.3;
-
-      if (r < 0.55) {
-        // Lila — dominante
-        cols[i*3]   = (0.55 + Math.random() * 0.25) * brightness;
-        cols[i*3+1] = (0.30 + Math.random() * 0.25) * brightness;
-        cols[i*3+2] = (0.85 + Math.random() * 0.15) * brightness;
-      } else if (r < 0.78) {
-        // Rosa suave
-        cols[i*3]   = (0.88 + Math.random() * 0.12) * brightness;
-        cols[i*3+1] = (0.50 + Math.random() * 0.25) * brightness;
-        cols[i*3+2] = (0.68 + Math.random() * 0.22) * brightness;
-      } else if (r < 0.92) {
-        // Plata / blanco frío
-        cols[i*3]   = (0.78 + Math.random() * 0.22) * brightness;
-        cols[i*3+1] = (0.80 + Math.random() * 0.20) * brightness;
-        cols[i*3+2] = (0.90 + Math.random() * 0.10) * brightness;
+      const b = 0.7 + Math.random() * 0.3;
+      if (r < 0.50) {
+        cols[i*3] = (0.55 + Math.random() * 0.25) * b;
+        cols[i*3+1] = (0.30 + Math.random() * 0.25) * b;
+        cols[i*3+2] = (0.85 + Math.random() * 0.15) * b;
+      } else if (r < 0.72) {
+        cols[i*3] = (0.88 + Math.random() * 0.12) * b;
+        cols[i*3+1] = (0.50 + Math.random() * 0.25) * b;
+        cols[i*3+2] = (0.68 + Math.random() * 0.22) * b;
+      } else if (r < 0.88) {
+        cols[i*3] = (0.78 + Math.random() * 0.22) * b;
+        cols[i*3+1] = (0.80 + Math.random() * 0.20) * b;
+        cols[i*3+2] = (0.90 + Math.random() * 0.10) * b;
       } else {
-        // Lila brillante — highlight
-        cols[i*3]   = 0.85 + Math.random() * 0.15;
-        cols[i*3+1] = 0.65 + Math.random() * 0.20;
-        cols[i*3+2] = 1.0;
+        cols[i*3] = 0.95; cols[i*3+1] = 0.82; cols[i*3+2] = 0.45;
       }
-
-      // Tamaños: mayoría pequeños, algunos medianos, pocos grandes
-      const sizeRoll = Math.random();
-      if (sizeRoll < 0.65)      szs[i] = 0.018 + Math.random() * 0.022; // pequeños
-      else if (sizeRoll < 0.90) szs[i] = 0.042 + Math.random() * 0.030; // medianos
-      else                       szs[i] = 0.075 + Math.random() * 0.045; // grandes (glow)
+      const sr = Math.random();
+      szs[i] = sr < 0.65 ? 0.016 + Math.random() * 0.018
+             : sr < 0.90 ? 0.036 + Math.random() * 0.026
+             :              0.065 + Math.random() * 0.035;
+      sds[i] = Math.random() * 100;
     }
-
-    return { randomPositions: random, heartPositions: heart, currentPositions: current, colors: cols, sizes: szs };
+    return { randomPos: rnd, heartPos: hrt, colors: cols, sizes: szs, seeds: sds };
   }, []);
 
-  const velocities = useMemo(() => {
-    const v = new Float32Array(PARTICLE_COUNT * 3);
-    for (let i = 0; i < PARTICLE_COUNT * 3; i++) v[i] = (Math.random() - 0.5) * 0.001;
-    return v;
-  }, []);
+  // Posición interpolada — actualizada en CPU solo para el lerp de forma
+  const currentPos = useMemo(() => new Float32Array(randomPos), [randomPos]);
 
-  useFrame((_state: unknown, delta: number) => {
-    if (!meshRef.current) return;
-    timeRef.current += delta;
-    const t = timeRef.current;
+  // Shader que hace el movimiento en GPU — sin loops JS por partícula
+  const material = useMemo(() => new THREE.ShaderMaterial({
+    uniforms: {
+      uTime:     { value: 0 },
+      uProgress: { value: 0 },
+      uMode:     { value: 0 }, // 0=void, 1=awake, 2=formed
+      uMouse:    { value: new THREE.Vector2(0, 0) },
+    },
+    vertexShader: `
+      attribute float size;
+      attribute vec3 color;
+      attribute float seed;
+      uniform float uTime;
+      uniform float uProgress;
+      uniform int   uMode;
+      uniform vec2  uMouse;
+      varying vec3  vColor;
+      varying float vAlpha;
 
-    const isHeart  = HEART_PHASES.includes(phase);
-    const isAwake  = AWAKE_PHASES.includes(phase);
-    const targetProgress = isHeart ? 1 : 0;
+      void main() {
+        vColor = color;
+        vec3 pos = position;
 
-    // Velocidad de convergencia: más rápida en formation
-    const lerpSpeed = phase === "formation" ? 0.018 : 0.010;
-    progressRef.current += (targetProgress - progressRef.current) * lerpSpeed;
+        if (uMode == 2) {
+          // Formado: latido suave en GPU
+          float beat = sin(uTime * 1.15 * 6.2832) * 0.05;
+          pos *= (1.0 + beat);
+          pos.z += sin(uTime * 0.4 + seed * 0.02) * 0.01;
+        } else if (uMode == 1) {
+          // Awake: deriva orgánica
+          pos.x += sin(uTime * 0.22 + seed * 0.4) * 0.14;
+          pos.y += cos(uTime * 0.16 + seed * 0.6) * 0.11;
+          pos.z += sin(uTime * 0.10 + seed * 0.3) * 0.07;
+          // Repulsión del cursor
+          vec2 toMouse = pos.xy - uMouse * vec2(5.0, 3.5);
+          float d = length(toMouse);
+          if (d < 2.0) {
+            float repel = (2.0 - d) / 2.0 * 0.08;
+            pos.xy += normalize(toMouse) * repel;
+          }
+        } else {
+          // Void: nebulosa flotante
+          pos.x += sin(uTime * 0.10 + seed * 0.45) * 0.16;
+          pos.y += cos(uTime * 0.08 + seed * 0.28) * 0.13;
+          pos.z += sin(uTime * 0.06 + seed * 0.62) * 0.08;
+        }
 
-    const geo = meshRef.current.geometry;
-    const pos = geo.attributes.position.array as Float32Array;
-    const sz  = geo.attributes.size?.array as Float32Array | undefined;
+        vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
+        float dist = length(mvPos.xyz);
+        vAlpha = clamp(1.0 - dist * 0.05, 0.2, 1.0);
 
-    lerpPositions(randomPositions, heartPositions, progressRef.current, currentPositions);
-
-    const mouse   = mouseRef.current ?? { x: 0, y: 0 };
-    const isFormed = progressRef.current > 0.82;
-
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-      const ix = i*3, iy = i*3+1, iz = i*3+2;
-      const baseSize = sizes[i];
-
-      if (isFormed) {
-        // Latido sincronizado
-        const beatFreq  = 1.15;
-        const beatAmp   = 0.032 + (baseSize > 0.06 ? 0.015 : 0);
-        const beatScale = 1 + Math.sin(t * beatFreq * Math.PI * 2) * beatAmp;
-        // Partículas grandes pulsan más
-        const orbitAmp  = baseSize > 0.06 ? 0.025 : 0.010;
-
-        pos[ix] = currentPositions[ix] * beatScale;
-        pos[iy] = currentPositions[iy] * beatScale;
-        pos[iz] = currentPositions[iz] + Math.sin(t * 0.4 + i * 0.02) * orbitAmp;
-
-        // Tamaño pulsa con el latido
-        if (sz) sz[i] = baseSize * (1 + Math.sin(t * beatFreq * Math.PI * 2) * 0.25);
-
-      } else if (isAwake) {
-        // Reacción al cursor con campo de fuerza
-        const dx = pos[ix] - mouse.x * 6;
-        const dy = pos[iy] - mouse.y * 4;
-        const distSq = dx*dx + dy*dy;
-        const dist   = Math.sqrt(distSq);
-        const repelRadius = 2.2;
-        const repel  = dist < repelRadius ? (repelRadius - dist) / repelRadius * 0.004 : 0;
-
-        velocities[ix] += (Math.random() - 0.5) * 0.0004 + (dx / (dist + 0.01)) * repel;
-        velocities[iy] += (Math.random() - 0.5) * 0.0004 + (dy / (dist + 0.01)) * repel;
-        velocities[iz] += (Math.random() - 0.5) * 0.0003;
-
-        velocities[ix] *= 0.96;
-        velocities[iy] *= 0.96;
-        velocities[iz] *= 0.96;
-
-        pos[ix] = currentPositions[ix] + Math.sin(t * 0.25 + i * 0.4) * 0.15 + velocities[ix] * 18;
-        pos[iy] = currentPositions[iy] + Math.cos(t * 0.18 + i * 0.6) * 0.12 + velocities[iy] * 18;
-        pos[iz] = currentPositions[iz] + Math.sin(t * 0.12 + i * 0.3) * 0.08;
-
-        if (sz) sz[i] = baseSize * (1 + Math.sin(t * 2 + i) * 0.15);
-
-      } else {
-        // Void: nebulosa flotante
-        const drift = 0.18;
-        pos[ix] = currentPositions[ix] + Math.sin(t * 0.12 + i * 0.45) * drift;
-        pos[iy] = currentPositions[iy] + Math.cos(t * 0.09 + i * 0.28) * drift * 0.8;
-        pos[iz] = currentPositions[iz] + Math.sin(t * 0.07 + i * 0.62) * drift * 0.6;
-
-        if (sz) sz[i] = baseSize * (0.9 + Math.sin(t * 0.5 + i * 0.1) * 0.1);
+        float beatSize = uMode == 2 ? (1.0 + sin(uTime * 1.15 * 6.2832) * 0.2) : 1.0;
+        gl_PointSize = size * beatSize * (340.0 / -mvPos.z);
+        gl_Position = projectionMatrix * mvPos;
       }
-    }
-
-    geo.attributes.position.needsUpdate = true;
-    if (sz && geo.attributes.size) geo.attributes.size.needsUpdate = true;
-
-    // Rotación del sistema
-    if (isFormed) {
-      meshRef.current.rotation.y = Math.sin(t * 0.06) * 0.18;
-      meshRef.current.rotation.x = Math.sin(t * 0.04) * 0.04;
-    } else {
-      meshRef.current.rotation.y += delta * 0.025;
-      meshRef.current.rotation.x  = Math.sin(t * 0.05) * 0.06;
-    }
-  });
-
-  // Shader material personalizado para tamaños variables
-  const shaderMaterial = useMemo(() => {
-    return new THREE.ShaderMaterial({
-      uniforms: { time: { value: 0 } },
-      vertexShader: `
-        attribute float size;
-        attribute vec3 color;
-        varying vec3 vColor;
-        varying float vAlpha;
-        void main() {
-          vColor = color;
-          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-          // Partículas más lejanas son más pequeñas
-          float dist = length(mvPosition.xyz);
-          vAlpha = clamp(1.0 - dist * 0.06, 0.3, 1.0);
-          gl_PointSize = size * (380.0 / -mvPosition.z);
-          gl_Position = projectionMatrix * mvPosition;
-        }
-      `,
-      fragmentShader: `
-        varying vec3 vColor;
-        varying float vAlpha;
-        void main() {
-          // Punto circular con glow suave
-          vec2 uv = gl_PointCoord - vec2(0.5);
-          float dist = length(uv);
-          if (dist > 0.5) discard;
-          // Core brillante + halo suave
-          float core = 1.0 - smoothstep(0.0, 0.25, dist);
-          float halo = 1.0 - smoothstep(0.15, 0.5, dist);
-          float alpha = (core * 0.9 + halo * 0.4) * vAlpha;
-          gl_FragColor = vec4(vColor, alpha);
-        }
-      `,
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      vertexColors: true,
-    });
-  }, []);
+    `,
+    fragmentShader: `
+      varying vec3  vColor;
+      varying float vAlpha;
+      void main() {
+        vec2 uv = gl_PointCoord - 0.5;
+        float d = length(uv);
+        if (d > 0.5) discard;
+        float core = 1.0 - smoothstep(0.0, 0.22, d);
+        float halo = 1.0 - smoothstep(0.12, 0.5, d);
+        float alpha = (core * 0.95 + halo * 0.3) * vAlpha;
+        gl_FragColor = vec4(vColor, alpha);
+      }
+    `,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    vertexColors: true,
+  }), []);
 
   const geometry = useMemo(() => {
     const geo = new THREE.BufferGeometry();
-    geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(randomPositions), 3));
+    geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(randomPos), 3));
     geo.setAttribute("color",    new THREE.BufferAttribute(colors, 3));
     geo.setAttribute("size",     new THREE.BufferAttribute(new Float32Array(sizes), 1));
+    geo.setAttribute("seed",     new THREE.BufferAttribute(seeds, 1));
     return geo;
-  }, [randomPositions, colors, sizes]);
+  }, [randomPos, colors, sizes, seeds]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const PointsMesh = "points" as any;
-  return <PointsMesh ref={meshRef} geometry={geometry} material={shaderMaterial} />;
+  useFrame((_, delta) => {
+    if (!meshRef.current) return;
+    const dt = Math.min(delta, 0.05);
+    timeRef.current += dt;
+    const t = timeRef.current;
+
+    const p = phaseRef.current;
+    const isHeart = HEART_PHASES.includes(p);
+    const isAwake = AWAKE_PHASES.includes(p);
+
+    // Lerp de progreso — solo actualiza posiciones base en CPU
+    const targetP = isHeart ? 1 : 0;
+    const lerpSpeed = p === "formation" ? 0.014 : 0.007;
+    progressRef.current += (targetP - progressRef.current) * lerpSpeed;
+
+    // Interpolación lineal simple entre random y heart — sin easing en CPU
+    const prog = progressRef.current;
+    const pos = geometry.attributes.position.array as Float32Array;
+    for (let i = 0; i < PARTICLE_COUNT * 3; i++) {
+      pos[i] = randomPos[i] + (heartPos[i] - randomPos[i]) * prog;
+    }
+    geometry.attributes.position.needsUpdate = true;
+
+    // Actualizar uniforms del shader
+    const u = material.uniforms;
+    u.uTime.value = t;
+    u.uProgress.value = prog;
+    u.uMode.value = prog > 0.78 ? 2 : isAwake ? 1 : 0;
+    const mouse = mouseRef.current;
+    if (mouse) {
+      u.uMouse.value.set(mouse.x, mouse.y);
+    }
+
+    // Rotación del sistema
+    if (prog > 0.78) {
+      meshRef.current.rotation.y = Math.sin(t * 0.05) * 0.14;
+    } else {
+      meshRef.current.rotation.y += dt * 0.02;
+    }
+  });
+
+  return <points ref={meshRef} geometry={geometry} material={material} />;
 }

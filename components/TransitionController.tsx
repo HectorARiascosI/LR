@@ -4,28 +4,28 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { Phase } from "@/hooks/useAnimationPhase";
 
 const PHASE_DURATIONS: Record<Phase, number> = {
-  void:     5500,
-  awakening: 6000,
-  origin:   15000,
+  void:      5000,
+  awakening: 7000,
+  origin:    15000,
   formation: 5500,
-  heartbeat: 4000,
-  letter_1: 13000,
-  letter_2: 14000,
-  letter_3: 17000,
-  letter_4: 17000,
-  final:    0,
+  heartbeat: 5000,
+  letter_1:  14000,
+  letter_2:  14000,
+  letter_3:  16000,
+  letter_4:  17000,
+  final:     0,
 };
 
 const PHASE_LABELS: Partial<Record<Phase, string>> = {
   void:      "inicio",
   awakening: "el despertar",
   origin:    "el origen",
-  formation: "la formación",
+  formation: "el bosque",
   heartbeat: "el latido",
   letter_1:  "quién eres",
   letter_2:  "lo que siento",
   letter_3:  "lo que me das",
-  letter_4:  "la confianza",
+  letter_4:  "fe y futuro",
   final:     "un mes",
 };
 

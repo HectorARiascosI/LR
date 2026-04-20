@@ -181,19 +181,3 @@ interface GlobalJSXIntrinsicElements {
   // Catch-all
   [elemName: string]: unknown;
 }
-
-// Extend JSX with @react-three/fiber Three.js elements
-declare module "react" {
-  namespace JSX {
-    interface IntrinsicElements {
-      [elemName: string]: unknown;
-    }
-  }
-}
-
-// Also extend the global JSX namespace for R3F elements
-declare namespace JSX {
-  interface IntrinsicElements {
-    [elemName: string]: unknown;
-  }
-}
