@@ -1,4 +1,5 @@
 "use client";
+/// <reference path="../types/jsx.d.ts" />
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
@@ -186,5 +187,7 @@ export default function ParticleSystem({ phase, mouseRef }: Props) {
     }
   });
 
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore — R3F registers <points> at runtime
   return <points ref={meshRef} geometry={geometry} material={material} />;
 }
