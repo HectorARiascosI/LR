@@ -179,7 +179,7 @@ function Forest() {
     { x: -18, z: -9, h: 4.8, s: 1.0 }, { x: 18, z: -9, h: 5.0, s: 1.0 },
   ], []);
 
-  return <>{trees.map((t, i) => <Tree key={i} {...t} />)}</>;
+  return <>{trees.map((t: { x: number; z: number; h: number; s: number }, i: number) => <Tree key={i} {...t} />)}</>;
 }
 
 // ─── RAYO ─────────────────────────────────────────────────────────────────────
